@@ -28,10 +28,10 @@ const generateRefreshToken = async (userId) => {
 const login = async (email, password) => {
   // Find user by email (email lookup doesn't need storeId)
   const user = await User.findOne({ email }).select('+password');
-  if (!user) throw { status: 401, message: 'Invalid email or password' };
+  if (!user) throw { status: 401, message: 'Invalid email' };
 
   const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) throw { status: 401, message: 'Invalid email or password' };
+  if (!isMatch) throw { status: 401, message: 'Invalid password' };
 
   const accessToken = generateAccessToken(user);
   const refreshToken = await generateRefreshToken(user._id);
