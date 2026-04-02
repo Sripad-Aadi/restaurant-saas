@@ -1,0 +1,8 @@
+{
+  "name": "@restaurant-saas/shared",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "zod": "^4.3.6"
+  }
+}
