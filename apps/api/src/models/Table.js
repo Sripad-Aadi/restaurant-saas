@@ -6,6 +6,7 @@ const tableSchema = new mongoose.Schema({
   tableNumber: { type: Number, required: true },
   label:       { type: String },
   qrTargetUrl:   { type: String },
+  qrCodeUrl: { type: String },
   isActive:    { type: Boolean, default: true },
 }, { timestamps: true });
 
