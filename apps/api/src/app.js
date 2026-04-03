@@ -1,9 +1,11 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const cookieParser = require('cookie-parser');
-const connectDB = require('./config/db');
-require('./config/redis'); // initialise Redis connection on startup
+import './config/env.js'; // must be first — loads .env before anything else
+import express from 'express';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import connectDB from './config/db.js';
+import redis from './config/redis.js'; // initialises connection
+import { standardLimiter } from './middleware/rateLimiter.js';
+import authRoutes from './modules/auth/auth.routes.js';
 
 const app = express();
 
@@ -12,11 +14,11 @@ connectDB();
 app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:3000', credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
+app.use(standardLimiter);
 
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
 
-// Routes will be added here in Phase 2+
-// app.use('/api/auth', require('./modules/auth/auth.routes'));
+app.use('/api/auth', authRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
