@@ -5,7 +5,7 @@ const tableSchema = new mongoose.Schema({
   storeId:     { type: mongoose.Schema.Types.ObjectId, ref: 'Store', required: true },
   tableNumber: { type: Number, required: true },
   label:       { type: String },
-  qrCodeUrl:   { type: String },
+  qrTargetUrl:   { type: String },
   isActive:    { type: Boolean, default: true },
 }, { timestamps: true });
 

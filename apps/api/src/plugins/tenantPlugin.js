@@ -1,10 +1,9 @@
 const tenantPlugin = (schema) => {
-  const requireStoreId = function (next) {
-    const filter = this.getFilter ? this.getFilter() : this._conditions;
+  const requireStoreId = function () {
+    const filter = this.getFilter();
     if (!filter.storeId) {
-      return next(new Error('TENANT_VIOLATION: storeId is required on all queries'));
+      throw new Error('TENANT_VIOLATION: storeId is required on all queries');
     }
-    next();
   };
 
   schema.pre('find', requireStoreId);
@@ -15,11 +14,10 @@ const tenantPlugin = (schema) => {
   schema.pre('deleteOne', requireStoreId);
   schema.pre('deleteMany', requireStoreId);
 
-  schema.pre('save', function (next) {
+  schema.pre('save', function () {
     if (!this.storeId) {
-      return next(new Error('TENANT_VIOLATION: storeId is required'));
+      throw new Error('TENANT_VIOLATION: storeId is required');
     }
-    next();
   });
 };
 

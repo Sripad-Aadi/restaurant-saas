@@ -19,6 +19,7 @@ const generateRefreshToken = async (userId) => {
 };
 
 export const login = async (email, password) => {
+  // +password because select: false on the schema
   const user = await User.findOne({ email }).select('+password');
   if (!user) throw { status: 401, message: 'Invalid email or password' };
 
