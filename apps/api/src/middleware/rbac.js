@@ -1,4 +1,3 @@
-// Permission map — role: [list of allowed permissions]
 const PERMISSIONS = {
   SUPER_ADMIN: [
     'platform_management', 'store_onboarding',
@@ -27,4 +26,4 @@ const requirePermission = (permission) => (req, res, next) => {
   next();
 };
 
-module.exports = requirePermission;
+export default requirePermission;

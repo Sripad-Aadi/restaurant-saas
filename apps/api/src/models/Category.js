@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-const tenantPlugin = require('../plugins/tenantPlugin');
+import mongoose from 'mongoose';
+import tenantPlugin from '../plugins/tenantPlugin.js';
 
 const categorySchema = new mongoose.Schema({
   storeId:   { type: mongoose.Schema.Types.ObjectId, ref: 'Store', required: true },
@@ -9,4 +9,6 @@ const categorySchema = new mongoose.Schema({
 }, { timestamps: true });
 
 categorySchema.plugin(tenantPlugin);
-module.exports = mongoose.model('Category', categorySchema);
+
+const Category = mongoose.model('Category', categorySchema);
+export default Category;

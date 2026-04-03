@@ -7,8 +7,8 @@ const validate = (schema) => (req, res, next) => {
     }));
     return res.status(400).json({ success: false, message: 'Validation failed', errors });
   }
-  req.body = result.data; // use the parsed/sanitized data
+  req.body = result.data;
   next();
 };
 
-module.exports = validate;
+export default validate;

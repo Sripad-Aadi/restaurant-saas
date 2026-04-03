@@ -1,10 +1,9 @@
-const rateLimit = require('express-rate-limit');
-const { RedisStore } = require('rate-limit-redis');
-const redis = require('../config/redis');
+import rateLimit from 'express-rate-limit';
+import { RedisStore } from 'rate-limit-redis';
+import redis from '../config/redis.js';
 
-// Standard limiter — all routes
-const standardLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+export const standardLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
@@ -14,8 +13,7 @@ const standardLimiter = rateLimit({
   message: { success: false, message: 'Too many requests, please try again later' },
 });
 
-// Strict limiter — auth routes only
-const authLimiter = rateLimit({
+export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
   standardHeaders: true,
@@ -25,5 +23,3 @@ const authLimiter = rateLimit({
   }),
   message: { success: false, message: 'Too many login attempts, please try again in 15 minutes' },
 });
-
-module.exports = { standardLimiter, authLimiter };

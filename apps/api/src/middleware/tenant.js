@@ -1,5 +1,4 @@
 const tenant = (req, res, next) => {
-  // Super Admin has no storeId — they operate across all tenants
   if (req.user?.role === 'SUPER_ADMIN') return next();
 
   const storeId = req.user?.storeId;
@@ -11,4 +10,4 @@ const tenant = (req, res, next) => {
   next();
 };
 
-module.exports = tenant;
+export default tenant;

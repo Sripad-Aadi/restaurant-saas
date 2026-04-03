@@ -1,5 +1,4 @@
 const tenantPlugin = (schema) => {
-  // Enforce storeId on all queries
   const requireStoreId = function (next) {
     const filter = this.getFilter ? this.getFilter() : this._conditions;
     if (!filter.storeId) {
@@ -16,7 +15,6 @@ const tenantPlugin = (schema) => {
   schema.pre('deleteOne', requireStoreId);
   schema.pre('deleteMany', requireStoreId);
 
-  // Enforce storeId on saves
   schema.pre('save', function (next) {
     if (!this.storeId) {
       return next(new Error('TENANT_VIOLATION: storeId is required'));
@@ -25,4 +23,4 @@ const tenantPlugin = (schema) => {
   });
 };
 
-module.exports = tenantPlugin;
+export default tenantPlugin;

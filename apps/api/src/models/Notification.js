@@ -1,13 +1,15 @@
-const mongoose = require('mongoose');
-const tenantPlugin = require('../plugins/tenantPlugin');
+import mongoose from 'mongoose';
+import tenantPlugin from '../plugins/tenantPlugin.js';
 
 const notificationSchema = new mongoose.Schema({
-  storeId:  { type: mongoose.Schema.Types.ObjectId, ref: 'Store', required: true },
-  message:  { type: String, required: true },
-  isRead:   { type: Boolean, default: false },
-  type:     { type: String, enum: ['ORDER', 'SYSTEM'], default: 'ORDER' },
-  refId:    { type: mongoose.Schema.Types.ObjectId }, // orderId or other ref
+  storeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Store', required: true },
+  message: { type: String, required: true },
+  isRead:  { type: Boolean, default: false },
+  type:    { type: String, enum: ['ORDER', 'SYSTEM'], default: 'ORDER' },
+  refId:   { type: mongoose.Schema.Types.ObjectId },
 }, { timestamps: true });
 
 notificationSchema.plugin(tenantPlugin);
-module.exports = mongoose.model('Notification', notificationSchema);
+
+const Notification = mongoose.model('Notification', notificationSchema);
+export default Notification;

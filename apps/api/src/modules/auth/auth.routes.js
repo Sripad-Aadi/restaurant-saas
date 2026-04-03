@@ -1,23 +1,22 @@
-const express = require('express');
-const router = express.Router();
-const authService = require('./auth.service');
-const validate = require('../../middleware/validate');
-const authenticate = require('../../middleware/auth');
-const { authLimiter } = require('../../middleware/rateLimiter');
-const { loginSchema } = require('./auth.validator');
+import { Router } from 'express';
+import * as authService from './auth.service.js';
+import validate from '../../middleware/validate.js';
+import authenticate from '../../middleware/auth.js';
+import { authLimiter } from '../../middleware/rateLimiter.js';
+import { loginSchema } from './auth.validator.js';
 
-// POST /api/auth/login
+const router = Router();
+
 router.post('/login', authLimiter, validate(loginSchema), async (req, res) => {
   try {
     const { email, password } = req.body;
     const { accessToken, refreshToken, user } = await authService.login(email, password);
 
-    // Set refresh token as httpOnly cookie
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     res.json({ success: true, accessToken, user });
@@ -26,7 +25,6 @@ router.post('/login', authLimiter, validate(loginSchema), async (req, res) => {
   }
 });
 
-// POST /api/auth/refresh
 router.post('/refresh', async (req, res) => {
   try {
     const refreshToken = req.cookies?.refreshToken;
@@ -34,14 +32,12 @@ router.post('/refresh', async (req, res) => {
       return res.status(401).json({ success: false, message: 'Refresh token missing' });
     }
 
-    // Decode without verifying to get userId (it's a UUID, not a JWT)
-    // userId comes from the request body instead
     const { userId } = req.body;
     if (!userId) {
       return res.status(400).json({ success: false, message: 'userId required' });
     }
 
-    const { accessToken, refreshToken: newRefreshToken } = 
+    const { accessToken, refreshToken: newRefreshToken } =
       await authService.refreshAccessToken(userId, refreshToken);
 
     res.cookie('refreshToken', newRefreshToken, {
@@ -57,7 +53,6 @@ router.post('/refresh', async (req, res) => {
   }
 });
 
-// POST /api/auth/logout
 router.post('/logout', authenticate, async (req, res) => {
   try {
     await authService.logout(req.user.userId);
@@ -68,9 +63,8 @@ router.post('/logout', authenticate, async (req, res) => {
   }
 });
 
-// GET /api/auth/me — verify token and return current user
-router.get('/me', authenticate, async (req, res) => {
+router.get('/me', authenticate, (req, res) => {
   res.json({ success: true, user: req.user });
 });
 
-module.exports = router;
+export default router;

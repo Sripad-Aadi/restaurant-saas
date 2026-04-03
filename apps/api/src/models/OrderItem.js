@@ -1,11 +1,12 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const orderItemSchema = new mongoose.Schema({
   orderId:   { type: mongoose.Schema.Types.ObjectId, ref: 'Order', required: true },
   productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
-  name:      { type: String, required: true },  // snapshot at time of order
-  price:     { type: Number, required: true },  // snapshot in paise
+  name:      { type: String, required: true },
+  price:     { type: Number, required: true },
   quantity:  { type: Number, required: true, min: 1 },
 }, { timestamps: true });
 
-module.exports = mongoose.model('OrderItem', orderItemSchema);
+const OrderItem = mongoose.model('OrderItem', orderItemSchema);
+export default OrderItem;

@@ -1,7 +1,7 @@
-require('dotenv').config({ path: './apps/api/.env' });
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
-const User = require('../models/User');
+import './env.js';
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
+import User from '../models/User.js';
 
 const seed = async () => {
   await mongoose.connect(process.env.MONGO_URI);
@@ -19,12 +19,9 @@ const seed = async () => {
     email: 'superadmin@restaurant.com',
     password,
     role: 'SUPER_ADMIN',
-    // No storeId for Super Admin
   });
 
-  console.log('✅ Super admin created');
-  console.log('   Email:    superadmin@restaurant.com');
-  console.log('   Password: Admin@123');
+  console.log('Super admin created');
   process.exit(0);
 };
 

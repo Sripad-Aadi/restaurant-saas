@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-const tenantPlugin = require('../plugins/tenantPlugin');
+import mongoose from 'mongoose';
+import tenantPlugin from '../plugins/tenantPlugin.js';
 
 const tableSchema = new mongoose.Schema({
   storeId:     { type: mongoose.Schema.Types.ObjectId, ref: 'Store', required: true },
@@ -10,4 +10,6 @@ const tableSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 tableSchema.plugin(tenantPlugin);
-module.exports = mongoose.model('Table', tableSchema);
+
+const Table = mongoose.model('Table', tableSchema);
+export default Table;
