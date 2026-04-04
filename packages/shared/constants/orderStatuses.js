@@ -1,0 +1,18 @@
+export const ORDER_STATUSES = {
+  PENDING:    'PENDING',
+  CONFIRMED:  'CONFIRMED',
+  PREPARING:  'PREPARING',
+  READY:      'READY',
+  COMPLETED:  'COMPLETED',
+  CANCELLED:  'CANCELLED',
+};
+
+// Defines which transitions are legal
+export const ALLOWED_TRANSITIONS = {
+  PENDING:   ['CONFIRMED', 'CANCELLED'],
+  CONFIRMED: ['PREPARING', 'CANCELLED'],
+  PREPARING: ['READY', 'CANCELLED'],
+  READY:     ['COMPLETED', 'CANCELLED'],
+  COMPLETED: [],
+  CANCELLED: [],
+};
