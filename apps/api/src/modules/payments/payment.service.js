@@ -3,6 +3,8 @@ import mongoose from 'mongoose';
 import Payment from '../../models/Payment.js';
 import Order from '../../models/Order.js';
 import { transitionOrder } from '../orders/order.statemachine.js';
+import { emitToRoom } from '../../config/socketEmitter.js';
+import { SOCKET_EVENTS } from '@restaurant-saas/shared';
 
 const isDev = process.env.NODE_ENV !== 'production';
 
@@ -111,7 +113,6 @@ export const handleWebhook = async (rawBody, signature) => {
 const handlePaymentCaptured = async (paymentEntity) => {
   const { order_id: razorpayOrderId, id: razorpayPaymentId } = paymentEntity;
 
-  // Use raw MongoDB collection to bypass tenant plugin completely
   const paymentDoc = await mongoose.connection
     .collection('payments')
     .findOne({ razorpayOrderId });
@@ -134,6 +135,16 @@ const handlePaymentCaptured = async (paymentEntity) => {
       { _id: paymentDoc.orderId },
       { $set: { status: 'CONFIRMED' } }
     );
+
+    // Emit to admin and customer
+    await emitToRoom('/orders', `store:${orderDoc.storeId}`, SOCKET_EVENTS.ORDER_CONFIRMED, {
+      orderId:  orderDoc._id,
+      status:   'CONFIRMED',
+    });
+    await emitToRoom('/orders', `order:${orderDoc._id}`, SOCKET_EVENTS.ORDER_CONFIRMED, {
+      orderId:  orderDoc._id,
+      status:   'CONFIRMED',
+    });
   }
 };
 

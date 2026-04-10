@@ -7,10 +7,9 @@
     "packages/*"
   ],
   "scripts": {
-    "dev:api": "npm run dev --workspace=apps/api",
+    "dev:api":    "npm run dev --workspace=apps/api",
     "dev:socket": "npm run dev --workspace=apps/socket",
-    "lint": "eslint .",
-    "format": "prettier --write ."
+    "dev":        "npm run dev:api & npm run dev:socket"
   },
   "devDependencies": {
     "eslint": "^10.1.0",
