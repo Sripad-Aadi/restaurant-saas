@@ -7,11 +7,15 @@
     "packages/*"
   ],
   "scripts": {
-    "dev:api":    "npm run dev --workspace=apps/api",
+    "dev:api": "npm run dev --workspace=apps/api",
     "dev:socket": "npm run dev --workspace=apps/socket",
-    "dev":        "npm run dev:api & npm run dev:socket"
+    "dev:customer": "npm run dev --workspace=apps/customer-ui",
+    "dev:admin": "npm run dev --workspace=apps/admin-ui",
+    "dev:backend": "concurrently \"npm run dev:api\" \"npm run dev:socket\"",
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:socket\" \"npm run dev:customer\" \"npm run dev:admin\""
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "eslint": "^10.1.0",
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.8.1"

@@ -28,3 +28,10 @@ __pycache__/
 coverage/
 .cache/
 .temp/
+
+# Exclude project execution documents
+plan.txt
+pdf2txt.py
+read_pdf.py
+*.pdf
+*readpdf*

@@ -1,0 +1,40 @@
+name: Monorepo CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x, 22.x]
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Install Dependencies
+      run: npm ci
+
+    - name: Lint Workspaces
+      run: npm run lint --if-present
+
+    - name: Run API Tests
+      run: npm run test --workspace=apps/api
+      env:
+        NODE_ENV: test
+        JWT_SECRET: test_secret
+
+    - name: Build Frontends
+      run: |
+        npm run build --workspace=apps/customer-ui
+        npm run build --workspace=apps/admin-ui

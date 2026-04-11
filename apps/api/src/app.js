@@ -19,7 +19,7 @@ const app = express();
 
 connectDB();
 
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:3000', credentials: true }));
+app.use(cors({ origin: ['http://localhost:3000', 'http://localhost:3001'], credentials: true }));
 app.use(cookieParser());
 
 // Webhook route needs raw body — must be registered BEFORE express.json()
