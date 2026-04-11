@@ -3,9 +3,27 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './AuthContext';
 import { ROLES } from '@restaurant-saas/shared';
 
-import Login from './pages/Login';
-import LiveOrders from './pages/LiveOrders';
-import Stores from './pages/SuperAdmin/Stores';
+// Layouts
+import AdminLayout from './layouts/AdminLayout';
+import SuperAdminLayout from './layouts/SuperAdminLayout';
+
+// Auth
+import Login from './pages/Auth/Login';
+
+// Admin Pages
+import AdminDashboard from './pages/Admin/AdminDashboard';
+import LiveOrders from './pages/Admin/LiveOrders';
+import MenuManagement from './pages/Admin/MenuManagement';
+import Tables from './pages/Admin/Tables';
+import AdminAnalytics from './pages/Admin/Analytics';
+import AdminSettings from './pages/Admin/Settings';
+
+// SuperAdmin Pages
+import SuperAdminDashboard from './pages/SuperAdmin/Dashboard';
+import Restaurants from './pages/SuperAdmin/Restaurants';
+import Users from './pages/SuperAdmin/Users';
+import SuperAdminAnalytics from './pages/SuperAdmin/Analytics';
+import SuperAdminSettings from './pages/SuperAdmin/Settings';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user } = useAuth();
@@ -16,9 +34,10 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center">
-        <h1 className="text-2xl font-bold text-slate-800">403 Forbidden</h1>
-        <p className="text-slate-500">You do not have permission to view this page.</p>
+      <div className="min-h-screen bg-light-bg flex flex-col justify-center items-center">
+        <h1 className="text-2xl font-bold text-text-primary">403 Forbidden</h1>
+        <p className="text-text-muted mt-2">You do not have permission to view this page.</p>
+        <button onClick={() => window.history.back()} className="mt-4 text-primary font-medium hover:underline">Go Back</button>
       </div>
     );
   }
@@ -28,9 +47,10 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
 const DashboardRedirect = () => {
   const { user } = useAuth();
-  if (user?.role === ROLES.SUPER_ADMIN) return <Navigate to="/superadmin/stores" replace />;
-  return <Navigate to="/live-orders" replace />;
-}
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.role === ROLES.SUPER_ADMIN || user.role === 'superadmin') return <Navigate to="/superadmin/dashboard" replace />;
+  return <Navigate to="/admin/dashboard" replace />;
+};
 
 function App() {
   return (
@@ -39,19 +59,38 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           
-          <Route path="/" element={<ProtectedRoute><DashboardRedirect /></ProtectedRoute>} />
+          <Route path="/" element={<DashboardRedirect />} />
 
-          <Route path="/live-orders" element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
-              <LiveOrders />
+          {/* Admin Routes */}
+          <Route path="/admin" element={
+            <ProtectedRoute allowedRoles={[ROLES.ADMIN, 'admin']}>
+              <AdminLayout />
             </ProtectedRoute>
-          } />
+          }>
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="orders" element={<LiveOrders />} />
+            <Route path="menu" element={<MenuManagement />} />
+            <Route path="tables" element={<Tables />} />
+            <Route path="analytics" element={<AdminAnalytics />} />
+            <Route path="settings" element={<AdminSettings />} />
+            <Route index element={<Navigate to="dashboard" replace />} />
+          </Route>
 
-          <Route path="/superadmin/stores" element={
-            <ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]}>
-              <Stores />
+          {/* Super Admin Routes */}
+          <Route path="/superadmin" element={
+            <ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, 'superadmin']}>
+              <SuperAdminLayout />
             </ProtectedRoute>
-          } />
+          }>
+            <Route path="dashboard" element={<SuperAdminDashboard />} />
+            <Route path="restaurants" element={<Restaurants />} />
+            <Route path="users" element={<Users />} />
+            <Route path="subscriptions" element={<div className="p-8">Subscriptions Module (Coming Soon)</div>} />
+            <Route path="analytics" element={<SuperAdminAnalytics />} />
+            <Route path="security" element={<div className="p-8">Security Logs (Coming Soon)</div>} />
+            <Route path="settings" element={<SuperAdminSettings />} />
+            <Route index element={<Navigate to="dashboard" replace />} />
+          </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

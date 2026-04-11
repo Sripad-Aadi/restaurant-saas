@@ -35,3 +35,4 @@ pdf2txt.py
 read_pdf.py
 *.pdf
 *readpdf*
+scratch/
