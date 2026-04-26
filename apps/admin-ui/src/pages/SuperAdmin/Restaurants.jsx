@@ -1,29 +1,85 @@
-import React, { useState } from 'react';
-import { Search, Plus, MoreHorizontal, Filter } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Plus, MoreHorizontal, Filter, Loader2 } from 'lucide-react';
 import DataTable from '../../components/DataTable';
 import StatusBadge from '../../components/StatusBadge';
+import api from '../../api';
 
 const Restaurants = () => {
   const [showDrawer, setShowDrawer] = useState(false);
+  const [stores, setStores] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Form State
+  const [formData, setFormData] = useState({
+    name: '', slug: '', timezone: 'Asia/Kolkata', adminName: 'Primary Admin', adminEmail: '', adminPassword: ''
+  });
+
+  useEffect(() => {
+    fetchStores();
+  }, []);
+
+  const fetchStores = async () => {
+    try {
+      const response = await api.get('/stores');
+      setStores(response.data.data);
+    } catch (err) {
+      console.error('Failed to fetch stores', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post('/stores', formData);
+      setShowDrawer(false);
+      setFormData({ name: '', slug: '', timezone: 'Asia/Kolkata', adminName: 'Primary Admin', adminEmail: '', adminPassword: '' });
+      setLoading(true);
+      fetchStores();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to create restaurant');
+    }
+  };
+
+  const toggleStatus = async (id, currentStatus) => {
+    try {
+      if (currentStatus) {
+        await api.patch(`/stores/${id}/deactivate`);
+      } else {
+        await api.patch(`/stores/${id}/activate`);
+      }
+      fetchStores();
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const columns = [
     { header: 'Restaurant Name', accessor: 'name', render: (row) => <span className="font-medium">{row.name}</span> },
     { header: 'Slug', accessor: 'slug', render: (row) => <span className="text-text-muted">/{row.slug}</span> },
-    { header: 'Owner Email', accessor: 'email' },
-    { header: 'Plan', accessor: 'plan' },
+    { header: 'Timezone', accessor: 'timezone' },
     { header: 'Status', accessor: 'status', render: (row) => <StatusBadge status={row.status} /> },
     { header: 'Created', accessor: 'created' },
-    { header: '', accessor: 'actions', render: () => (
-      <button className="p-1 hover:bg-light-bg rounded text-text-muted hover:text-text-primary"><MoreHorizontal className="w-5 h-5" /></button>
+    { header: '', accessor: 'actions', render: (row) => (
+      <button 
+        onClick={(e) => { e.stopPropagation(); toggleStatus(row.id, row.rawStatus); }}
+        className="p-2 text-xs font-medium bg-light-bg rounded text-text-secondary hover:text-text-primary"
+      >
+        {row.rawStatus ? 'Suspend' : 'Activate'}
+      </button>
     )}
   ];
 
-  const data = [
-    { id: 1, name: 'Spice Route', slug: 'spice-route', email: 'admin@spiceroute.com', plan: 'Pro', status: 'Active', created: 'Oct 12, 2025' },
-    { id: 2, name: 'Bistro 99', slug: 'bistro-99', email: 'hello@bistro99.com', plan: 'Basic', status: 'Active', created: 'Nov 05, 2025' },
-    { id: 3, name: 'Sushi Zen', slug: 'sushi-zen', email: 'owner@sushizen.com', plan: 'Pro', status: 'Inactive', created: 'Dec 01, 2025' },
-    { id: 4, name: 'Burger Joint', slug: 'burger-joint', email: 'admin@burgerjoint.net', plan: 'Basic', status: 'Active', created: 'Jan 15, 2026' },
-  ];
+  const data = stores.map(store => ({
+    id: store._id,
+    name: store.name,
+    slug: store.slug,
+    timezone: store.timezone || 'N/A',
+    rawStatus: store.isActive,
+    status: store.isActive ? 'Active' : 'Inactive',
+    created: new Date(store.createdAt).toLocaleDateString()
+  }));
 
   return (
     <div className="h-full flex flex-col relative">
@@ -46,7 +102,7 @@ const Restaurants = () => {
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
           <input 
             type="text" 
-            placeholder="Search name, slug, email..." 
+            placeholder="Search name, slug..." 
             className="w-full pl-9 pr-4 py-2 text-sm border border-border-light rounded-lg focus:ring-1 focus:ring-primary focus:border-primary outline-none bg-card-white shadow-sm"
           />
         </div>
@@ -55,8 +111,12 @@ const Restaurants = () => {
         </button>
       </div>
 
-      <div className="flex-1 min-h-0">
-         <DataTable columns={columns} data={data} onRowClick={(row) => console.log('Row clicked', row)} />
+      <div className="flex-1 min-h-0 relative">
+         {loading ? (
+           <div className="absolute inset-0 flex justify-center items-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
+         ) : (
+           <DataTable columns={columns} data={data} onRowClick={(row) => console.log('Row clicked', row)} />
+         )}
       </div>
 
       {/* Slide-over Drawer - Add Restaurant */}
@@ -69,38 +129,80 @@ const Restaurants = () => {
               <button onClick={() => setShowDrawer(false)} className="text-2xl text-text-muted hover:text-text-primary">&times;</button>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-6 space-y-5">
-              <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1">Store Name *</label>
-                <input type="text" className="w-full p-2 border border-border-light rounded focus:border-primary outline-none" placeholder="e.g. Spice Route" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1">Slug (auto-suggested)</label>
-                <input type="text" className="w-full p-2 border border-border-light rounded bg-light-bg text-text-muted" placeholder="spice-route" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1">Timezone</label>
-                <select className="w-full p-2 border border-border-light rounded focus:border-primary outline-none bg-white">
-                  <option>Asia/Kolkata</option>
-                  <option>UTC</option>
-                </select>
+            <form onSubmit={handleCreate} className="flex-1 flex flex-col min-h-0">
+              <div className="flex-1 overflow-y-auto p-6 space-y-5">
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-1">Store Name *</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    className="w-full p-2 border border-border-light rounded focus:border-primary outline-none" 
+                    placeholder="e.g. Spice Route" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-1">Slug *</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={formData.slug}
+                    onChange={(e) => setFormData({...formData, slug: e.target.value})}
+                    className="w-full p-2 border border-border-light rounded focus:border-primary outline-none" 
+                    placeholder="spice-route" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-1">Timezone</label>
+                  <select 
+                    value={formData.timezone}
+                    onChange={(e) => setFormData({...formData, timezone: e.target.value})}
+                    className="w-full p-2 border border-border-light rounded focus:border-primary outline-none bg-white"
+                  >
+                    <option>Asia/Kolkata</option>
+                    <option>UTC</option>
+                  </select>
+                </div>
+                
+                <h4 className="font-medium text-text-primary pt-4 border-t border-border-light">Primary Admin Credentials</h4>
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-1">Admin Name *</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={formData.adminName}
+                    onChange={(e) => setFormData({...formData, adminName: e.target.value})}
+                    className="w-full p-2 border border-border-light rounded focus:border-primary outline-none" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-1">Admin Email *</label>
+                  <input 
+                    type="email" 
+                    required
+                    value={formData.adminEmail}
+                    onChange={(e) => setFormData({...formData, adminEmail: e.target.value})}
+                    className="w-full p-2 border border-border-light rounded focus:border-primary outline-none" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-1">Temporary Password *</label>
+                  <input 
+                    type="password" 
+                    required
+                    value={formData.adminPassword}
+                    onChange={(e) => setFormData({...formData, adminPassword: e.target.value})}
+                    className="w-full p-2 border border-border-light rounded focus:border-primary outline-none" 
+                  />
+                </div>
               </div>
               
-              <h4 className="font-medium text-text-primary pt-4 border-t border-border-light">Admin Details</h4>
-              <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1">Admin Email *</label>
-                <input type="email" className="w-full p-2 border border-border-light rounded focus:border-primary outline-none" />
+              <div className="p-6 bg-light-bg border-t border-border-light flex gap-3">
+                <button type="button" onClick={() => setShowDrawer(false)} className="flex-1 py-2 border border-border-light bg-white rounded font-medium text-text-secondary hover:bg-light-bg">Cancel</button>
+                <button type="submit" className="flex-1 py-2 bg-primary text-white rounded font-medium hover:bg-primary/90">Create Restaurant</button>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1">Temporary Password *</label>
-                <input type="password" className="w-full p-2 border border-border-light rounded focus:border-primary outline-none" />
-              </div>
-            </div>
-            
-            <div className="p-6 bg-light-bg border-t border-border-light flex gap-3">
-              <button onClick={() => setShowDrawer(false)} className="flex-1 py-2 border border-border-light bg-white rounded font-medium text-text-secondary hover:bg-light-bg">Cancel</button>
-              <button className="flex-1 py-2 bg-primary text-white rounded font-medium hover:bg-primary/90">Create Restaurant</button>
-            </div>
+            </form>
           </div>
         </div>
       )}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Store, Users, CreditCard, BarChart2, Shield, Settings } from 'lucide-react';
+import { LayoutDashboard, Store, CreditCard, BarChart2, Shield, Settings } from 'lucide-react';
 import SidebarLink from '../components/SidebarLink';
 import TopHeader from '../components/TopHeader';
 
@@ -11,7 +11,6 @@ const SuperAdminLayout = () => {
     const path = location.pathname;
     if (path.includes('dashboard')) return 'Platform Overview';
     if (path.includes('restaurants')) return 'Restaurants';
-    if (path.includes('users')) return 'Users';
     if (path.includes('subscriptions')) return 'Subscriptions';
     if (path.includes('analytics')) return 'Analytics';
     if (path.includes('settings')) return 'Settings';
@@ -32,7 +31,6 @@ const SuperAdminLayout = () => {
         <nav className="flex-1 overflow-y-auto py-6 px-3">
           <SidebarLink to="/superadmin/dashboard" icon={LayoutDashboard}>Platform Overview</SidebarLink>
           <SidebarLink to="/superadmin/restaurants" icon={Store}>Restaurants</SidebarLink>
-          <SidebarLink to="/superadmin/users" icon={Users}>Users</SidebarLink>
           <SidebarLink to="/superadmin/subscriptions" icon={CreditCard}>Subscriptions</SidebarLink>
           <SidebarLink to="/superadmin/analytics" icon={BarChart2}>Analytics</SidebarLink>
           

@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Store, Activity, ShoppingBag, IndianRupee, ArrowUpRight, CheckCircle2 } from 'lucide-react';
 import StatusBadge from '../../components/StatusBadge';
 import { LineChart, Line, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import api from '../../api';
 
 const KPICard = ({ title, value, subtitle, icon: Icon, color, trend }) => (
   <div className="bg-card-white border border-border-light p-6 rounded-xl shadow-sm">
@@ -27,26 +28,53 @@ const KPICard = ({ title, value, subtitle, icon: Icon, color, trend }) => (
 );
 
 const SuperAdminDashboard = () => {
-  const activityData = [
-    { name: 'Spice Route', slug: 'spice-route', status: 'Active', orders: 142, rev: '₹42K', active: 'Just now' },
-    { name: 'Bistro 99', slug: 'bistro-99', status: 'Active', orders: 89, rev: '₹28K', active: '5 min ago' },
-    { name: 'Sushi Zen', slug: 'sushi-zen', status: 'Inactive', orders: 0, rev: '₹0', active: '2 days ago' },
-    { name: 'Burger Joint', slug: 'burger-joint', status: 'Active', orders: 210, rev: '₹55K', active: '1 min ago' },
-  ];
+  const [stores, setStores] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStores = async () => {
+      try {
+        const response = await api.get('/stores');
+        setStores(response.data.data);
+      } catch (err) {
+        console.error('Failed to fetch stores', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStores();
+  }, []);
+
+  const totalStores = stores.length;
+  const activeStores = stores.filter(s => s.isActive).length;
+  const activeRate = totalStores > 0 ? ((activeStores / totalStores) * 100).toFixed(1) : 0;
+
+  const activityData = stores.map(store => ({
+    name: store.name,
+    slug: store.slug,
+    status: store.isActive ? 'Active' : 'Inactive',
+    orders: '-', // Not available yet
+    rev: '-', // Not available yet
+    active: new Date(store.createdAt).toLocaleDateString()
+  }));
 
   const chartData = [
     { day: 'Mon', volume: 1200 }, { day: 'Tue', volume: 1540 }, { day: 'Wed', volume: 1420 },
     { day: 'Thu', volume: 1680 }, { day: 'Fri', volume: 2100 }, { day: 'Sat', volume: 2600 }, { day: 'Sun', volume: 2300 },
   ];
 
+  if (loading) {
+    return <div className="p-8 text-center text-text-muted">Loading dashboard data...</div>;
+  }
+
   return (
     <div className="space-y-6">
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <KPICard title="Total Restaurants" value="47" trend={{ isPositive: true, value: '↑ 3' }} subtitle="this month" icon={Store} color="primary" />
-        <KPICard title="Active Restaurants" value="44" subtitle="93.6% active rate" icon={CheckCircle2} color="success" />
-        <KPICard title="Today's Orders" value="1,284" subtitle="Across all stores" icon={ShoppingBag} color="warning" />
-        <KPICard title="Platform Revenue" value="₹2.4L" subtitle="This month" icon={IndianRupee} color="info" />
+        <KPICard title="Total Restaurants" value={totalStores} subtitle="total onboarded" icon={Store} color="primary" />
+        <KPICard title="Active Restaurants" value={activeStores} subtitle={`${activeRate}% active rate`} icon={CheckCircle2} color="success" />
+        <KPICard title="Today's Orders" value="-" subtitle="Across all stores (Beta)" icon={ShoppingBag} color="warning" />
+        <KPICard title="Platform Revenue" value="-" subtitle="This month (Beta)" icon={IndianRupee} color="info" />
       </div>
 
       <div className="flex flex-col xl:flex-row gap-6">
@@ -62,10 +90,13 @@ const SuperAdminDashboard = () => {
                     <th className="pb-3 font-semibold">Status</th>
                     <th className="pb-3 font-semibold text-right">Orders</th>
                     <th className="pb-3 font-semibold text-right">Revenue</th>
-                    <th className="pb-3 font-semibold text-right">Last Active</th>
+                    <th className="pb-3 font-semibold text-right">Joined On</th>
                   </tr>
                 </thead>
                 <tbody>
+                  {activityData.length === 0 && (
+                    <tr><td colSpan="5" className="py-4 text-center text-slate-400">No restaurants yet.</td></tr>
+                  )}
                   {activityData.map((row, i) => (
                     <tr key={i} className="border-b border-border-light last:border-0 hover:bg-light-bg/50 cursor-pointer">
                       <td className="py-4">

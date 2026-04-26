@@ -5,7 +5,6 @@ import { useAuth } from '../../AuthContext';
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('admin'); // For mocked login since backend isn't ready
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -17,11 +16,13 @@ const Login = () => {
     setError('');
     
     try {
-      // Simulate API call delay
-      await new Promise(r => setTimeout(r, 800));
-      await login(email, password, role);
+      const user = await login(email, password);
       
-      if (role === 'superadmin') {
+      if (user.role === 'CUSTOMER') {
+        throw new Error('Access denied. Admin or Super Admin privileges required.');
+      }
+
+      if (user.role === 'SUPER_ADMIN' || user.role === 'superadmin') {
         navigate('/superadmin/dashboard');
       } else {
         navigate('/admin/dashboard');
@@ -88,20 +89,7 @@ const Login = () => {
               <a href="#" className="text-sm text-primary hover:underline font-medium">Forgot password?</a>
             </div>
             
-            {/* Mock Role Selector for Development */}
-            <div className="border border-warning/30 bg-warning/5 rounded-lg p-3 mt-4">
-              <label className="block text-xs font-semibold text-warning uppercase mb-2 tracking-wider">
-                Dev Tool: Select Simulated Role
-              </label>
-              <select 
-                value={role} 
-                onChange={(e) => setRole(e.target.value)}
-                className="w-full text-sm bg-card-white border border-border-light rounded px-2 py-1 outline-none"
-              >
-                <option value="admin">Restaurant Admin</option>
-                <option value="superadmin">Super Admin</option>
-              </select>
-            </div>
+
 
             <button
               type="submit"
