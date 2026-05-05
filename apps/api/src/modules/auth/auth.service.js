@@ -6,7 +6,12 @@ import User from '../../models/User.js';
 
 const generateAccessToken = (user) => {
   return jwt.sign(
-    { userId: user._id, role: user.role, storeId: user.storeId },
+    { 
+      userId: user._id, 
+      role: user.role, 
+      storeId: user.storeId,
+      tokenVersion: user.tokenVersion || 0 
+    },
     process.env.JWT_ACCESS_SECRET,
     { expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m' }
   );
@@ -80,4 +85,18 @@ export const logout = async (userId) => {
 
 export const hashPassword = async (plainPassword) => {
   return bcrypt.hash(plainPassword, 12);
+};
+
+export const impersonateStoreAdmin = async (storeId) => {
+  const user = await User.findOne({ storeId, role: 'admin' }).sort({ createdAt: 1 });
+  if (!user) throw { status: 404, message: 'No admin found for this store' };
+
+  const accessToken = generateAccessToken(user);
+  const refreshToken = await generateRefreshToken(user._id);
+
+  return {
+    accessToken,
+    refreshToken,
+    user: { id: user._id, name: user.name, email: user.email, role: user.role, storeId: user.storeId },
+  };
 };

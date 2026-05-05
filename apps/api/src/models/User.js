@@ -58,6 +58,10 @@ const userSchema = new mongoose.Schema(
       select: false,
       default: null,
     },
+    tokenVersion: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,
@@ -75,11 +79,10 @@ userSchema.index({ role: 1, isActive: 1 });           // superadmin user listing
 userSchema.index({ storeId: 1, email: 1 });           // fast login lookup scoped to store
 
 // --- Hooks ---
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
+userSchema.pre('save', async function () {
+  if (!this.isModified('password')) return;
   const salt = await bcrypt.genSalt(12);
   this.password = await bcrypt.hash(this.password, salt);
-  next();
 });
 
 // --- Methods ---
@@ -102,6 +105,7 @@ userSchema.methods.toTokenPayload = function () {
     role: this.role,
     storeId: this.storeId,
     email: this.email,
+    tokenVersion: this.tokenVersion,
   };
 };
 

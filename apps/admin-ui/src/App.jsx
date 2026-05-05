@@ -21,8 +21,10 @@ import AdminSettings from './pages/Admin/Settings';
 // SuperAdmin Pages
 import SuperAdminDashboard from './pages/SuperAdmin/Dashboard';
 import Restaurants from './pages/SuperAdmin/Restaurants';
+import RestaurantDetail from './pages/SuperAdmin/RestaurantDetail';
 import SuperAdminAnalytics from './pages/SuperAdmin/Analytics';
 import SuperAdminSettings from './pages/SuperAdmin/Settings';
+import Users from './pages/SuperAdmin/Users';
 
 import PrivateRoute from './components/PrivateRoute';
 
@@ -65,7 +67,9 @@ function App() {
           }>
             <Route path="dashboard" element={<SuperAdminDashboard />} />
             <Route path="restaurants" element={<Restaurants />} />
+            <Route path="restaurants/:id" element={<RestaurantDetail />} />
             <Route path="subscriptions" element={<div className="p-8">Subscriptions Module (Coming Soon)</div>} />
+            <Route path="users" element={<Users />} />
             <Route path="analytics" element={<SuperAdminAnalytics />} />
             <Route path="security" element={<div className="p-8">Security Logs (Coming Soon)</div>} />
             <Route path="settings" element={<SuperAdminSettings />} />

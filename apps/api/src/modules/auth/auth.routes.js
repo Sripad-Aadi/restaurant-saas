@@ -85,4 +85,26 @@ router.get('/me', isAuthenticated, (req, res) => {
   res.json({ success: true, user: req.user });
 });
 
+import { isSuperAdmin } from '../../middleware/auth.js';
+
+router.post('/impersonate', isAuthenticated, isSuperAdmin, async (req, res) => {
+  try {
+    const { storeId } = req.body;
+    if (!storeId) return res.status(400).json({ success: false, message: 'storeId is required' });
+
+    const { accessToken, refreshToken, user } = await authService.impersonateStoreAdmin(storeId);
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.json({ success: true, accessToken, user });
+  } catch (err) {
+    res.status(err.status || 500).json({ success: false, message: err.message });
+  }
+});
+
 export default router;

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from "react-router-dom";
-import { Store, Activity, ShoppingBag, IndianRupee, ArrowUpRight, CheckCircle2 } from 'lucide-react';
+import { Link, useNavigate } from "react-router-dom";
+import { Store, Activity, ShoppingBag, IndianRupee, ArrowUpRight, CheckCircle2, Search, Loader2 } from 'lucide-react';
 import StatusBadge from '../../components/StatusBadge';
+import DataTable from '../../components/DataTable';
 import { LineChart, Line, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import api from '../../api';
+import api, { setAccessToken } from '../../api';
+import { useAuth } from '../../AuthContext';
 
 const KPICard = ({ title, value, subtitle, icon: Icon, color, trend }) => (
   <div className="bg-card-white border border-border-light p-6 rounded-xl shadow-sm">
@@ -30,33 +32,64 @@ const KPICard = ({ title, value, subtitle, icon: Icon, color, trend }) => (
 
 const SuperAdminDashboard = () => {
   const [stores, setStores] = useState([]);
+  const [kpis, setKpis] = useState({ totalStores: '-', activeStores: '-', todaysOrders: '-', monthlyRevenue: '-' });
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const { setUser } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchStores = async () => {
-      try {
-        const response = await api.get('/stores');
-        setStores(response.data.data);
-      } catch (err) {
-        console.error('Failed to fetch stores', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchStores();
+    const controller = new AbortController();
+    fetchData(controller.signal);
+    return () => controller.abort();
   }, []);
 
-  const totalStores = stores.length;
-  const activeStores = stores.filter(s => s.isActive).length;
-  const activeRate = totalStores > 0 ? ((activeStores / totalStores) * 100).toFixed(1) : 0;
+  const fetchData = async (signal) => {
+    try {
+      const [storesRes, kpisRes] = await Promise.all([
+        api.get('/stores?stats=true', { signal }),
+        api.get('/analytics/superadmin/kpis', { signal })
+      ]);
+      setStores(storesRes.data.data);
+      if (kpisRes.data.success) {
+        setKpis(kpisRes.data.data);
+      }
+    } catch (err) {
+      if (err.name === 'CanceledError') return;
+      console.error('Failed to fetch dashboard data', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const activityData = stores.map(store => ({
+  const filteredStores = stores.filter(store => 
+    store.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    store.slug.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const activeRate = kpis.totalStores && kpis.totalStores !== '-' ? ((kpis.activeStores / kpis.totalStores) * 100).toFixed(1) : 0;
+
+  const columns = [
+    { header: 'Restaurant', accessor: 'name', render: (row) => (
+        <div>
+          <div className="font-medium text-text-primary">{row.name}</div>
+          <div className="text-xs text-text-muted">/{row.slug}</div>
+        </div>
+      )
+    },
+    { header: 'Status', accessor: 'status', render: (row) => <StatusBadge status={row.status} /> },
+    { header: 'Orders', accessor: 'orderCount', render: (row) => <span className="font-semibold text-text-primary">{row.orderCount}</span> },
+    { header: 'Revenue', accessor: 'revenue', render: (row) => <span className="font-bold text-success">₹{(row.revenue / 100).toLocaleString()}</span> }
+  ];
+
+  const tableData = filteredStores.map(store => ({
+    id: store._id,
     name: store.name,
     slug: store.slug,
+    rawStatus: store.isActive,
     status: store.isActive ? 'Active' : 'Inactive',
-    orders: '-', // Not available yet
-    rev: '-', // Not available yet
-    active: new Date(store.createdAt).toLocaleDateString()
+    orderCount: store.orderCount || 0,
+    revenue: store.totalRevenue || 0
   }));
 
   const chartData = [
@@ -65,55 +98,40 @@ const SuperAdminDashboard = () => {
   ];
 
   if (loading) {
-    return <div className="p-8 text-center text-text-muted">Loading dashboard data...</div>;
+    return <div className="h-full flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   }
 
   return (
     <div className="space-y-6">
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <KPICard title="Total Restaurants" value={totalStores} subtitle="total onboarded" icon={Store} color="primary" />
-        <KPICard title="Active Restaurants" value={activeStores} subtitle={`${activeRate}% active rate`} icon={CheckCircle2} color="success" />
-        <KPICard title="Today's Orders" value="-" subtitle="Across all stores (Beta)" icon={ShoppingBag} color="warning" />
-        <KPICard title="Platform Revenue" value="-" subtitle="This month (Beta)" icon={IndianRupee} color="info" />
+        <KPICard title="Total Restaurants" value={kpis.totalStores} subtitle="total onboarded" icon={Store} color="primary" />
+        <KPICard title="Active Restaurants" value={kpis.activeStores} subtitle={`${activeRate}% active rate`} icon={CheckCircle2} color="success" />
+        <KPICard title="Today's Orders" value={kpis.todaysOrders} subtitle="Across all stores" icon={ShoppingBag} color="warning" />
+        <KPICard title="Platform Revenue" value={kpis.monthlyRevenue !== '-' ? `₹${(kpis.monthlyRevenue / 100).toLocaleString()}` : '-'} subtitle="This month" icon={IndianRupee} color="info" />
       </div>
 
       <div className="flex flex-col xl:flex-row gap-6">
         {/* Left Col - 60% */}
         <div className="xl:w-[60%] space-y-6">
           <div className="bg-card-white border border-border-light rounded-xl shadow-sm p-6 overflow-hidden flex flex-col h-full">
-            <h3 className="text-lg font-semibold text-text-primary mb-6">Restaurant Activity</h3>
-            <div className="overflow-x-auto flex-1">
-              <table className="w-full text-left text-sm whitespace-nowrap">
-                <thead>
-                  <tr className="border-b border-border-light text-text-secondary">
-                    <th className="pb-3 font-semibold">Restaurant</th>
-                    <th className="pb-3 font-semibold">Status</th>
-                    <th className="pb-3 font-semibold text-right">Orders</th>
-                    <th className="pb-3 font-semibold text-right">Revenue</th>
-                    <th className="pb-3 font-semibold text-right">Joined On</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {activityData.length === 0 && (
-                    <tr><td colSpan="5" className="py-4 text-center text-slate-400">No restaurants yet.</td></tr>
-                  )}
-                  {activityData.map((row, i) => (
-                    <tr key={i} className="border-b border-border-light last:border-0 hover:bg-light-bg/50 cursor-pointer">
-                      <td className="py-4">
-                        <div className="font-medium text-text-primary">{row.name}</div>
-                        <div className="text-xs text-text-muted">/{row.slug}</div>
-                      </td>
-                      <td className="py-4"><StatusBadge status={row.status} /></td>
-                      <td className="py-4 text-right">{row.orders}</td>
-                      <td className="py-4 text-right font-medium">{row.rev}</td>
-                      <td className="py-4 text-right text-text-secondary text-xs">{row.active}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-semibold text-text-primary">Restaurant Activity</h3>
+              <div className="relative w-64">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+                <input 
+                  type="text" 
+                  placeholder="Search restaurants..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 text-sm border border-border-light rounded-lg focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+                />
+              </div>
             </div>
-            <div className="pt-4 border-t border-border-light text-center">
+            <div className="overflow-x-auto flex-1">
+              <DataTable columns={columns} data={tableData} />
+            </div>
+            <div className="pt-4 border-t border-border-light text-center mt-4">
               <Link to="/superadmin/restaurants">
                 <button className="text-sm text-primary font-medium hover:underline">View All Restaurants</button>
               </Link>
@@ -144,10 +162,10 @@ const SuperAdminDashboard = () => {
           </div>
 
           {/* Volume Chart */}
-          <div className="bg-card-white border border-border-light rounded-xl shadow-sm p-6">
+          <div className="bg-card-white border border-border-light rounded-xl shadow-sm p-6 flex flex-col">
             <h3 className="text-sm font-semibold text-text-primary mb-4">Order Volume (7 Days)</h3>
-            <div className="h-[140px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="h-[200px] w-full" style={{ minHeight: '200px' }}>
+              <ResponsiveContainer width="99%" height={200}>
                 <LineChart data={chartData}>
                   <XAxis dataKey="day" fontSize={12} tickLine={false} axisLine={false} />
                   <Tooltip contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
@@ -156,8 +174,6 @@ const SuperAdminDashboard = () => {
               </ResponsiveContainer>
             </div>
           </div>
-          
-          {/* Action Feed placeholder */}
         </div>
       </div>
     </div>

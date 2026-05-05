@@ -14,6 +14,8 @@ import tableRoutes from './modules/tables/table.routes.js';
 import menuRoutes from './modules/menu/menu.routes.js';
 import orderRoutes from './modules/orders/order.routes.js';
 import paymentRoutes from './modules/payments/payment.routes.js';
+import analyticsRoutes from './modules/analytics/analytics.routes.js';
+import userRoutes from './modules/users/user.routes.js';
 
 const app = express();
 
@@ -41,6 +43,8 @@ app.use('/api/tables', standardLimiter, tableRoutes);
 app.use('/api/menu', standardLimiter, menuRoutes);
 app.use('/api/orders', standardLimiter, orderRoutes);
 app.use('/api/payments', standardLimiter, paymentRoutes);
+app.use('/api/analytics', standardLimiter, analyticsRoutes);
+app.use('/api/users', standardLimiter, userRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

@@ -1,5 +1,11 @@
 const PERMISSIONS = {
-  SUPER_ADMIN: [
+  SUPERADMIN: [
+    'platform_management', 'store_onboarding',
+    'menu_read', 'menu_write',
+    'order_read_all', 'order_status_update',
+    'analytics_read', 'table_management',
+  ],
+  SUPER_ADMIN: [ // Fallback
     'platform_management', 'store_onboarding',
     'menu_read', 'menu_write',
     'order_read_all', 'order_status_update',
@@ -17,7 +23,11 @@ const PERMISSIONS = {
 
 const requirePermission = (permission) => (req, res, next) => {
   const role = req.user?.role;
-  if (!role || !PERMISSIONS[role]?.includes(permission)) {
+  if (!role) {
+    return res.status(403).json({ success: false, message: 'Role not found' });
+  }
+  const normalizedRole = role.toUpperCase().replace('_', ''); // Normalize both SUPER_ADMIN and SUPERADMIN to SUPERADMIN
+  if (!PERMISSIONS[normalizedRole]?.includes(permission)) {
     return res.status(403).json({
       success: false,
       message: 'You do not have permission to perform this action',

@@ -34,8 +34,7 @@ router.get('/:storeSlug', async (req, res) => {
           id:          p._id,
           name:        p.name,
           description: p.description,
-          price:       p.price,       // paise
-          priceInRupees: (p.price / 100).toFixed(2),
+          price:       (p.price / 100).toFixed(2),
           imageUrl:    p.imageUrl,
         })),
     }));

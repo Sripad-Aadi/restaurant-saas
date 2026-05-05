@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
+import User from '../models/User.js';
 
-export const isAuthenticated = (req, res, next) => {
+export const isAuthenticated = async (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
     return res.status(401).json({ success: false, message: 'Access token required' });
@@ -9,9 +10,37 @@ export const isAuthenticated = (req, res, next) => {
   const token = authHeader.split(' ')[1];
   try {
     const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
-    req.user = decoded;
+    
+    // Support both 'id' and 'userId' for backward compatibility
+    const userId = decoded.id || decoded.userId;
+
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Invalid token payload' });
+    }
+
+    // Fetch user from DB to verify existence and session version
+    const user = await User.findById(userId).select('+tokenVersion');
+    
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'User not found' });
+    }
+
+    // Force logout check (Session versioning)
+    const currentVersion = user.tokenVersion || 0;
+    const tokenVersion = decoded.tokenVersion || 0;
+
+    if (currentVersion !== tokenVersion) {
+      return res.status(401).json({ success: false, message: 'Session expired or forced logout' });
+    }
+
+    // Attach user to request - use plain object to avoid Mongoose issues in other middlewares
+    req.user = user.toObject();
+    // Ensure ID is present as 'id' for compatibility
+    req.user.id = user._id.toString();
+    
     next();
   } catch (err) {
+    console.error('Authentication Error:', err.message);
     if (err.name === 'TokenExpiredError') {
       return res.status(401).json({ success: false, message: 'Access token expired' });
     }
@@ -20,7 +49,8 @@ export const isAuthenticated = (req, res, next) => {
 };
 
 export const isAdmin = (req, res, next) => {
-  if (req.user && (req.user.role === 'admin' || req.user.role === 'superadmin')) {
+  const role = req.user?.role?.toUpperCase();
+  if (role === 'ADMIN' || role === 'SUPER_ADMIN' || role === 'SUPERADMIN') {
     next();
   } else {
     res.status(403).json({ success: false, message: 'Admin privileges required' });
@@ -28,7 +58,8 @@ export const isAdmin = (req, res, next) => {
 };
 
 export const isSuperAdmin = (req, res, next) => {
-  if (req.user && req.user.role === 'superadmin') {
+  const role = req.user?.role?.toUpperCase();
+  if (role === 'SUPER_ADMIN' || role === 'SUPERADMIN') {
     next();
   } else {
     res.status(403).json({ success: false, message: 'Super Admin privileges required' });
