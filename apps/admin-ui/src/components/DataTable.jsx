@@ -7,9 +7,6 @@ const DataTable = ({ columns, data, onRowClick }) => {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-light-bg border-b border-border-light text-text-secondary text-sm">
-              <th className="px-4 py-3 w-8">
-                <input type="checkbox" className="rounded border-border-light text-primary focus:ring-primary h-4 w-4" />
-              </th>
               {columns.map((col, i) => (
                 <th key={i} className="px-4 py-3 font-semibold">
                   {col.header}
@@ -25,9 +22,6 @@ const DataTable = ({ columns, data, onRowClick }) => {
                   className={`border-b border-border-light last:border-0 hover:bg-light-bg/50 transition-colors cursor-pointer ${rowIndex % 2 !== 0 ? 'bg-light-bg/30' : 'bg-card-white'}`}
                   onClick={() => onRowClick && onRowClick(row)}
                 >
-                  <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                    <input type="checkbox" className="rounded border-border-light text-primary focus:ring-primary h-4 w-4" />
-                  </td>
                   {columns.map((col, colIndex) => (
                     <td key={colIndex} className="px-4 py-3 text-sm text-text-primary">
                       {col.render ? col.render(row) : row[col.accessor]}

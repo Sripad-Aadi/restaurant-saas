@@ -18,6 +18,28 @@ const generateRefreshToken = async (userId) => {
   return token;
 };
 
+export const register = async (name, email, password, role, storeId) => {
+  const existingUser = await User.findOne({ email, role });
+  if (existingUser) throw { status: 400, message: 'User with this email and role already exists' };
+
+  const user = await User.create({
+    name,
+    email,
+    password, // Hash is handled by Mongoose pre-save hook
+    role,
+    storeId: storeId || null,
+  });
+
+  const accessToken = generateAccessToken(user);
+  const refreshToken = await generateRefreshToken(user._id);
+
+  return {
+    accessToken,
+    refreshToken,
+    user: { id: user._id, name: user.name, email: user.email, role: user.role, storeId: user.storeId },
+  };
+};
+
 export const login = async (email, password) => {
   // +password because select: false on the schema
   const user = await User.findOne({ email }).select('+password');

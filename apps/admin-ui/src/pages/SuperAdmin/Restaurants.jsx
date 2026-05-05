@@ -64,7 +64,11 @@ const Restaurants = () => {
     { header: '', accessor: 'actions', render: (row) => (
       <button 
         onClick={(e) => { e.stopPropagation(); toggleStatus(row.id, row.rawStatus); }}
-        className="p-2 text-xs font-medium bg-light-bg rounded text-text-secondary hover:text-text-primary"
+        className={`p-2 text-xs font-medium rounded text-text-secondary hover:text-text-primary ${
+         row.rawStatus 
+            ? "bg-red-100 text-red-600 hover:bg-red-200"
+            : "bg-green-100 text-green-600 hover:bg-green-200"
+        }`}
       >
         {row.rawStatus ? 'Suspend' : 'Activate'}
       </button>

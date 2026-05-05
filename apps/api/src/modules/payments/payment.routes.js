@@ -1,14 +1,14 @@
 import { Router } from 'express';
 import * as paymentService from './payment.service.js';
 import validate from '../../middleware/validate.js';
-import authenticate from '../../middleware/auth.js';
+import { isAuthenticated } from '../../middleware/auth.js';
 import tenant from '../../middleware/tenant.js';
 import { initiatePaymentSchema } from './payment.validator.js';
 
 const router = Router();
 
 // POST /api/payments/initiate
-router.post('/initiate', authenticate, tenant, validate(initiatePaymentSchema), async (req, res) => {
+router.post('/initiate', isAuthenticated, tenant, validate(initiatePaymentSchema), async (req, res) => {
   try {
     const result = await paymentService.initiatePayment(
       req.tenant.storeId,

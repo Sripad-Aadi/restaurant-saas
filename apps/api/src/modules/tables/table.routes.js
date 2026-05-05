@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import * as tableService from './table.service.js';
 import validate from '../../middleware/validate.js';
-import authenticate from '../../middleware/auth.js';
+import { isAuthenticated } from '../../middleware/auth.js';
 import tenant from '../../middleware/tenant.js';
 import requirePermission from '../../middleware/rbac.js';
 import Store from '../../models/Store.js';
@@ -9,7 +9,7 @@ import { createTableSchema, updateTableSchema } from './table.validator.js';
 
 const router = Router();
 
-router.use(authenticate, tenant, requirePermission('table_management'));
+router.use(isAuthenticated, tenant, requirePermission('table_management'));
 
 // GET /api/tables
 router.get('/', async (req, res) => {

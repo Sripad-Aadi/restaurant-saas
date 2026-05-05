@@ -24,25 +24,7 @@ import Restaurants from './pages/SuperAdmin/Restaurants';
 import SuperAdminAnalytics from './pages/SuperAdmin/Analytics';
 import SuperAdminSettings from './pages/SuperAdmin/Settings';
 
-const ProtectedRoute = ({ children, allowedRoles }) => {
-  const { user } = useAuth();
-  
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
-    return (
-      <div className="min-h-screen bg-light-bg flex flex-col justify-center items-center">
-        <h1 className="text-2xl font-bold text-text-primary">403 Forbidden</h1>
-        <p className="text-text-muted mt-2">You do not have permission to view this page.</p>
-        <button onClick={() => window.history.back()} className="mt-4 text-primary font-medium hover:underline">Go Back</button>
-      </div>
-    );
-  }
-
-  return children;
-};
+import PrivateRoute from './components/PrivateRoute';
 
 const DashboardRedirect = () => {
   const { user } = useAuth();
@@ -62,9 +44,9 @@ function App() {
 
           {/* Admin Routes */}
           <Route path="/admin" element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN, 'admin']}>
+            <PrivateRoute allowedRoles={[ROLES.ADMIN, 'admin']}>
               <AdminLayout />
-            </ProtectedRoute>
+            </PrivateRoute>
           }>
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="orders" element={<LiveOrders />} />
@@ -77,9 +59,9 @@ function App() {
 
           {/* Super Admin Routes */}
           <Route path="/superadmin" element={
-            <ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN, 'superadmin']}>
+            <PrivateRoute allowedRoles={[ROLES.SUPER_ADMIN, 'superadmin']}>
               <SuperAdminLayout />
-            </ProtectedRoute>
+            </PrivateRoute>
           }>
             <Route path="dashboard" element={<SuperAdminDashboard />} />
             <Route path="restaurants" element={<Restaurants />} />

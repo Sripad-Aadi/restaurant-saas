@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from "react-router-dom";
 import { Store, Activity, ShoppingBag, IndianRupee, ArrowUpRight, CheckCircle2 } from 'lucide-react';
 import StatusBadge from '../../components/StatusBadge';
 import { LineChart, Line, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
@@ -113,7 +114,9 @@ const SuperAdminDashboard = () => {
               </table>
             </div>
             <div className="pt-4 border-t border-border-light text-center">
-              <button className="text-sm text-primary font-medium hover:underline">View All Restaurants</button>
+              <Link to="/superadmin/restaurants">
+                <button className="text-sm text-primary font-medium hover:underline">View All Restaurants</button>
+              </Link>
             </div>
           </div>
         </div>

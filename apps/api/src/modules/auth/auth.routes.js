@@ -1,11 +1,29 @@
 import { Router } from 'express';
 import * as authService from './auth.service.js';
 import validate from '../../middleware/validate.js';
-import authenticate from '../../middleware/auth.js';
+import { isAuthenticated } from '../../middleware/auth.js';
 import { authLimiter } from '../../middleware/rateLimiter.js';
-import { loginSchema } from './auth.validator.js';
+import { loginSchema, registerSchema } from './auth.validator.js';
 
 const router = Router();
+
+router.post('/register', authLimiter, validate(registerSchema), async (req, res) => {
+  try {
+    const { name, email, password, role, storeId } = req.body;
+    const { accessToken, refreshToken, user } = await authService.register(name, email, password, role, storeId);
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.status(201).json({ success: true, accessToken, user });
+  } catch (err) {
+    res.status(err.status || 500).json({ success: false, message: err.message });
+  }
+});
 
 router.post('/login', authLimiter, validate(loginSchema), async (req, res) => {
   try {
@@ -25,7 +43,7 @@ router.post('/login', authLimiter, validate(loginSchema), async (req, res) => {
   }
 });
 
-router.post('/refresh', async (req, res) => {
+router.post('/refresh-token', async (req, res) => {
   try {
     const refreshToken = req.cookies?.refreshToken;
     if (!refreshToken) {
@@ -53,7 +71,7 @@ router.post('/refresh', async (req, res) => {
   }
 });
 
-router.post('/logout', authenticate, async (req, res) => {
+router.post('/logout', isAuthenticated, async (req, res) => {
   try {
     await authService.logout(req.user.userId);
     res.clearCookie('refreshToken');
@@ -63,7 +81,7 @@ router.post('/logout', authenticate, async (req, res) => {
   }
 });
 
-router.get('/me', authenticate, (req, res) => {
+router.get('/me', isAuthenticated, (req, res) => {
   res.json({ success: true, user: req.user });
 });
 

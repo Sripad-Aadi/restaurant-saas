@@ -1,14 +1,14 @@
 import { Router } from 'express';
 import * as orderService from './order.service.js';
 import validate from '../../middleware/validate.js';
-import authenticate from '../../middleware/auth.js';
+import { isAuthenticated } from '../../middleware/auth.js';
 import tenant from '../../middleware/tenant.js';
 import requirePermission from '../../middleware/rbac.js';
 import { createOrderSchema, updateOrderStatusSchema } from './order.validator.js';
 
 const router = Router();
 
-router.use(authenticate, tenant);
+router.use(isAuthenticated, tenant);
 
 // POST /api/orders — customer creates an order
 router.post('/', requirePermission('order_create'), validate(createOrderSchema), async (req, res) => {

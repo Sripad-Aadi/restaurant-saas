@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 
-const authenticate = (req, res, next) => {
+export const isAuthenticated = (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
     return res.status(401).json({ success: false, message: 'Access token required' });
@@ -19,4 +19,18 @@ const authenticate = (req, res, next) => {
   }
 };
 
-export default authenticate;
+export const isAdmin = (req, res, next) => {
+  if (req.user && (req.user.role === 'admin' || req.user.role === 'superadmin')) {
+    next();
+  } else {
+    res.status(403).json({ success: false, message: 'Admin privileges required' });
+  }
+};
+
+export const isSuperAdmin = (req, res, next) => {
+  if (req.user && req.user.role === 'superadmin') {
+    next();
+  } else {
+    res.status(403).json({ success: false, message: 'Super Admin privileges required' });
+  }
+};

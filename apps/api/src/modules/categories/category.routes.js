@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import * as categoryService from './category.service.js';
 import validate from '../../middleware/validate.js';
-import authenticate from '../../middleware/auth.js';
+import { isAuthenticated } from '../../middleware/auth.js';
 import tenant from '../../middleware/tenant.js';
 import requirePermission from '../../middleware/rbac.js';
 import {
@@ -12,7 +12,7 @@ import {
 
 const router = Router();
 
-router.use(authenticate, tenant);
+router.use(isAuthenticated, tenant);
 
 // GET /api/categories
 router.get('/', requirePermission('menu_read'), async (req, res) => {

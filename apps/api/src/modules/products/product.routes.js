@@ -1,14 +1,14 @@
 import { Router } from 'express';
 import * as productService from './product.service.js';
 import validate from '../../middleware/validate.js';
-import authenticate from '../../middleware/auth.js';
+import { isAuthenticated } from '../../middleware/auth.js';
 import tenant from '../../middleware/tenant.js';
 import requirePermission from '../../middleware/rbac.js';
 import { createProductSchema, updateProductSchema } from './product.validator.js';
 
 const router = Router();
 
-router.use(authenticate, tenant);
+router.use(isAuthenticated, tenant);
 
 // GET /api/products?categoryId=...&isAvailable=true
 router.get('/', requirePermission('menu_read'), async (req, res) => {

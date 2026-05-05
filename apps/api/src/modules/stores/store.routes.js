@@ -1,14 +1,14 @@
 import { Router } from 'express';
 import * as storeService from './store.service.js';
 import validate from '../../middleware/validate.js';
-import authenticate from '../../middleware/auth.js';
+import { isAuthenticated } from '../../middleware/auth.js';
 import requirePermission from '../../middleware/rbac.js';
 import { createStoreSchema, updateStoreSchema } from './store.validator.js';
 
 const router = Router();
 
 // All store routes require authentication + platform_management permission
-router.use(authenticate, requirePermission('platform_management'));
+router.use(isAuthenticated, requirePermission('platform_management'));
 
 // GET /api/stores — list all stores
 router.get('/', async (req, res) => {

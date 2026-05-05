@@ -1,13 +1,12 @@
 import mongoose from 'mongoose';
-import Order from '../../models/Order.js';
-import OrderItem from '../../models/OrderItem.js';
+import { Order } from '../../models/Order.js';
 import Product from '../../models/Product.js';
 import { transitionOrder } from './order.statemachine.js';
 import { emitToRoom } from '../../config/socketEmitter.js';
 import { SOCKET_EVENTS } from '@restaurant-saas/shared';
 
-export const createOrder = async (storeId, customerId, { tableId, idempotencyKey, items }) => {
-  const existing = await Order.findOne({ storeId, idempotencyKey });
+export const createOrder = async (storeId, customerId, { tableId, idempotencyKey, items, specialInstructions = '' }) => {
+  const existing = await Order.findOne({ storeId, idempotencyKey }).select('+idempotencyKey');
   if (existing) return { order: existing, isDuplicate: true };
 
   const productIds = items.map((i) => i.productId);
@@ -27,35 +26,43 @@ export const createOrder = async (storeId, customerId, { tableId, idempotencyKey
 
   const productMap = new Map(products.map((p) => [p._id.toString(), p]));
 
-  let totalAmount = 0;
+  let subtotal = 0;
   const orderItems = items.map((item) => {
     const product = productMap.get(item.productId);
-    totalAmount += product.price * item.quantity;
+    const itemSubtotal = product.price * item.quantity;
+    subtotal += itemSubtotal;
     return {
       productId: product._id,
       name:      product.name,
       price:     product.price,
       quantity:  item.quantity,
+      subtotal:  itemSubtotal,
+      foodType:  product.foodType,
+      image:     product.image,
     };
   });
 
+  const orderNumber = await Order.generateOrderNumber(storeId);
+
   const order = await Order.create({
     storeId,
-    tableId,
-    customerId,
-    totalAmount,
+    orderNumber,
+    tableId: tableId || null,
+    customerId: customerId || null,
+    items: orderItems,
+    specialInstructions,
+    subtotal,
+    total: subtotal,
     idempotencyKey,
     status: 'PENDING',
   });
 
-  const itemDocs = orderItems.map((item) => ({ ...item, orderId: order._id }));
-  await OrderItem.insertMany(itemDocs);
-
   // Notify admin dashboard of new order
   await emitToRoom('/orders', `store:${storeId}`, SOCKET_EVENTS.ORDER_NEW, {
     orderId:     order._id,
+    orderNumber: order.orderNumber,
     tableId:     order.tableId,
-    totalAmount: order.totalAmount,
+    totalAmount: order.total,
     status:      order.status,
     createdAt:   order.createdAt,
   });
@@ -67,8 +74,7 @@ export const getOrderById = async (storeId, orderId) => {
   const order = await Order.findOne({ storeId, _id: orderId });
   if (!order) throw { status: 404, message: 'Order not found' };
 
-  const items = await OrderItem.find({ orderId: order._id });
-  return { ...order.toObject(), items };
+  return order.toObject();
 };
 
 export const getOrdersByStore = async (storeId, filters = {}) => {
