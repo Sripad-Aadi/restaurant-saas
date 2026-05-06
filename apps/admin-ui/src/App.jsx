@@ -31,7 +31,7 @@ import PrivateRoute from './components/PrivateRoute';
 const DashboardRedirect = () => {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" replace />;
-  if (user.role === ROLES.SUPER_ADMIN || user.role === 'superadmin') return <Navigate to="/superadmin/dashboard" replace />;
+  if (user.role === ROLES.SUPER_ADMIN) return <Navigate to="/superadmin/dashboard" replace />;
   return <Navigate to="/admin/dashboard" replace />;
 };
 
@@ -46,7 +46,7 @@ function App() {
 
           {/* Admin Routes */}
           <Route path="/admin" element={
-            <PrivateRoute allowedRoles={[ROLES.ADMIN, 'admin']}>
+            <PrivateRoute allowedRoles={[ROLES.ADMIN]}>
               <AdminLayout />
             </PrivateRoute>
           }>
@@ -61,7 +61,7 @@ function App() {
 
           {/* Super Admin Routes */}
           <Route path="/superadmin" element={
-            <PrivateRoute allowedRoles={[ROLES.SUPER_ADMIN, 'superadmin']}>
+            <PrivateRoute allowedRoles={[ROLES.SUPER_ADMIN]}>
               <SuperAdminLayout />
             </PrivateRoute>
           }>

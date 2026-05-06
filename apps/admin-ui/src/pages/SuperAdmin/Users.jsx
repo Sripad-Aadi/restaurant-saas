@@ -1,14 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, LogOut, Shield, User, Loader2, MoreVertical, Ban, CheckCircle2 } from 'lucide-react';
+import { Search, Filter, LogOut, Shield, User, Loader2, MoreVertical, Ban, CheckCircle2, Edit2, UserPlus, Trash2 } from 'lucide-react';
 import DataTable from '../../components/DataTable';
 import StatusBadge from '../../components/StatusBadge';
+import UserDrawer from './components/UserDrawer';
+import ConfirmationModal from '../../components/ConfirmationModal';
 import api from '../../api';
+import { ROLES } from '@restaurant-saas/shared';
 
 const Users = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
+  const [error, setError] = useState('');
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [modalConfig, setModalConfig] = useState({ isOpen: false, userId: null });
 
   useEffect(() => {
     fetchUsers();
@@ -20,27 +27,54 @@ const Users = () => {
       setUsers(response.data.data);
     } catch (err) {
       console.error('Failed to fetch users', err);
+      setError('Failed to load users. Please refresh.');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleAddUser = () => {
+    setEditingUser(null);
+    setIsDrawerOpen(true);
+  };
+
+  const handleEditUser = (user) => {
+    setEditingUser(user);
+    setIsDrawerOpen(true);
+  };
+
   const handleForceLogout = async (userId) => {
     if (!window.confirm('Are you sure you want to force logout this user? All their active sessions will be invalidated.')) return;
+    setError('');
     try {
       await api.post(`/users/${userId}/logout`);
-      alert('User forced to logout successfully');
     } catch (err) {
-      alert('Failed to force logout user');
+      setError('Failed to force logout user');
+    }
+  };
+
+  const handleDeleteClick = (id) => {
+    setModalConfig({ isOpen: true, userId: id });
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await api.delete(`/users/${modalConfig.userId}`);
+      setModalConfig({ ...modalConfig, isOpen: false });
+      fetchUsers();
+    } catch (err) {
+      setError('Failed to delete user');
+      setModalConfig({ ...modalConfig, isOpen: false });
     }
   };
 
   const handleToggleStatus = async (userId) => {
+    setError('');
     try {
       await api.patch(`/users/${userId}/status`);
       fetchUsers();
     } catch (err) {
-      alert('Failed to update user status');
+      setError('Failed to update user status');
     }
   };
 
@@ -58,8 +92,8 @@ const Users = () => {
     )},
     { header: 'Role', accessor: 'role', render: (row) => (
       <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md ${
-        row.role === 'superadmin' ? 'bg-error/10 text-error' : 
-        row.role === 'admin' ? 'bg-primary/10 text-primary' : 'bg-success/10 text-success'
+        row.role === ROLES.SUPER_ADMIN ? 'bg-error/10 text-error' : 
+        row.role === ROLES.ADMIN ? 'bg-primary/10 text-primary' : 'bg-success/10 text-success'
       }`}>
         {row.role}
       </span>
@@ -69,6 +103,13 @@ const Users = () => {
     { header: 'Last Login', accessor: 'lastLogin', render: (row) => row.lastLogin ? new Date(row.lastLogin).toLocaleDateString() : 'Never' },
     { header: 'Actions', accessor: 'actions', render: (row) => (
       <div className="flex items-center gap-2">
+        <button 
+          onClick={() => handleEditUser(row.raw)}
+          title="Edit User"
+          className="p-1.5 text-text-muted hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+        >
+          <Edit2 className="w-4 h-4" />
+        </button>
         <button 
           onClick={() => handleForceLogout(row.id)}
           title="Force Logout"
@@ -83,6 +124,13 @@ const Users = () => {
         >
           {row.isActive ? <Ban className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
         </button>
+        <button 
+          onClick={() => handleDeleteClick(row.id)}
+          title="Delete User"
+          className="p-1.5 text-text-muted hover:text-error hover:bg-error/10 rounded-lg transition-colors"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
       </div>
     )}
   ];
@@ -94,7 +142,8 @@ const Users = () => {
     role: user.role,
     storeId: user.storeId,
     isActive: user.isActive,
-    lastLogin: user.lastLogin
+    lastLogin: user.lastLogin,
+    raw: user
   }));
 
   return (
@@ -104,7 +153,20 @@ const Users = () => {
           <h2 className="text-2xl font-bold text-text-primary">Platform Users</h2>
           <p className="text-sm text-text-secondary mt-1">Manage accounts and security for all roles</p>
         </div>
+        <button 
+          onClick={handleAddUser}
+          className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-lg shadow-primary/20"
+        >
+          <UserPlus className="w-4 h-4" /> Add User
+        </button>
       </div>
+
+      {error && (
+        <div className="p-3 bg-error/10 border border-error/20 text-error text-sm rounded-lg font-medium flex justify-between items-center">
+          <span>{error}</span>
+          <button onClick={() => setError('')} className="text-error/60 hover:text-error transition-colors text-lg">&times;</button>
+        </div>
+      )}
 
       <div className="flex gap-4">
         <div className="relative flex-1 max-w-md">
@@ -124,9 +186,9 @@ const Users = () => {
           className="px-4 py-2.5 text-sm border border-border-light rounded-xl outline-none bg-card-white cursor-pointer"
         >
           <option value="">All Roles</option>
-          <option value="superadmin">Super Admins</option>
-          <option value="admin">Store Admins</option>
-          <option value="customer">Customers</option>
+          <option value={ROLES.SUPER_ADMIN}>Super Admins</option>
+          <option value={ROLES.ADMIN}>Store Admins</option>
+          <option value={ROLES.CUSTOMER}>Customers</option>
         </select>
       </div>
 
@@ -136,9 +198,28 @@ const Users = () => {
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
         ) : (
-          <DataTable columns={columns} data={tableData} />
+          <DataTable 
+            columns={columns} 
+            data={tableData} 
+            onRowClick={(row) => handleEditUser(row.raw)}
+          />
         )}
       </div>
+
+      <UserDrawer 
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        user={editingUser}
+        onSave={fetchUsers}
+      />
+
+      <ConfirmationModal 
+        isOpen={modalConfig.isOpen}
+        onClose={() => setModalConfig({ ...modalConfig, isOpen: false })}
+        onConfirm={confirmDelete}
+        title="Delete User"
+        message="Are you sure you want to delete this user? This action cannot be undone."
+      />
     </div>
   );
 };

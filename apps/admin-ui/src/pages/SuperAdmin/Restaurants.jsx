@@ -4,6 +4,8 @@ import { Search, Plus, Loader2, Globe, Shield, Clock, CreditCard, X } from 'luci
 import DataTable from '../../components/DataTable';
 import StatusBadge from '../../components/StatusBadge';
 import ConfirmationModal from '../../components/ConfirmationModal';
+import Drawer from '../../components/Drawer';
+import ImageUpload from '../../components/ImageUpload';
 import api, { setAccessToken } from '../../api';
 import { useAuth } from '../../AuthContext';
 
@@ -14,6 +16,8 @@ const Restaurants = () => {
   const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
   
   // Modal State
   const [modalConfig, setModalConfig] = useState({ isOpen: false, storeId: null, currentStatus: null });
@@ -30,7 +34,7 @@ const Restaurants = () => {
     coverImage: '',
     razorpayKey: '',
     razorpaySecret: '',
-    adminName: 'Primary Admin', 
+    adminName: '', 
     adminEmail: '', 
     adminPassword: ''
   });
@@ -52,6 +56,9 @@ const Restaurants = () => {
 
   const handleCreate = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
+    setError('');
+
     try {
       const payload = {
         name: formData.name,
@@ -77,7 +84,13 @@ const Restaurants = () => {
       setLoading(true);
       fetchStores();
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to create restaurant');
+      console.error('Failed to create store:', err);
+      const msg = err.response?.data?.errors 
+        ? err.response.data.errors.map(e => `${e.field}: ${e.message}`).join(', ')
+        : err.response?.data?.message || 'Failed to create restaurant';
+      setError(msg);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -85,8 +98,9 @@ const Restaurants = () => {
     setFormData({
       name: '', slug: '', description: '', cuisineType: '', timezone: 'Asia/Kolkata', 
       avgWaitTime: '15-20 mins', logo: '', coverImage: '', razorpayKey: '', razorpaySecret: '',
-      adminName: 'Primary Admin', adminEmail: '', adminPassword: ''
+      adminName: '', adminEmail: '', adminPassword: ''
     });
+    setError('');
   };
 
   const toggleStatus = async (id, currentStatus) => {
@@ -122,7 +136,7 @@ const Restaurants = () => {
         navigate('/admin/dashboard');
       }
     } catch (err) {
-      alert('Failed to impersonate admin: ' + (err.response?.data?.message || err.message));
+      console.error('Impersonation failed:', err);
     }
   };
 
@@ -194,7 +208,7 @@ const Restaurants = () => {
           <p className="text-sm text-text-secondary mt-1">Manage all tenant restaurants and their settings</p>
         </div>
         <button 
-          onClick={() => setShowDrawer(true)}
+          onClick={() => { resetForm(); setShowDrawer(true); }}
           className="bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-lg shadow-primary/20 flex items-center gap-2 active:scale-95"
         >
           <Plus className="w-5 h-5" /> Add Restaurant
@@ -220,7 +234,11 @@ const Restaurants = () => {
          {loading ? (
            <div className="absolute inset-0 flex justify-center items-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
          ) : (
-           <DataTable columns={columns} data={data} />
+           <DataTable 
+             columns={columns} 
+             data={data} 
+             onRowClick={(row) => navigate(`/superadmin/restaurants/${row.id}`)}
+           />
          )}
       </div>
 
@@ -235,188 +253,194 @@ const Restaurants = () => {
       />
 
       {/* Slide-over Drawer - Add Restaurant */}
-      {showDrawer && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          <div className="absolute inset-0 bg-dark-bg/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setShowDrawer(false)}></div>
-          <div className="w-[580px] bg-card-white shadow-2xl h-full flex flex-col relative animate-in slide-in-from-right duration-300">
-            <div className="px-8 py-5 border-b border-border-light flex justify-between items-center bg-light-bg/50">
-              <div>
-                <h3 className="font-bold text-xl text-text-primary">Add New Restaurant</h3>
-                <p className="text-xs text-text-secondary mt-0.5">Provision a new store and admin account</p>
-              </div>
-              <button onClick={() => setShowDrawer(false)} className="p-2 hover:bg-border-light rounded-full transition-colors text-text-muted hover:text-text-primary">
-                <X className="w-6 h-6" />
-              </button>
+      <Drawer
+        isOpen={showDrawer}
+        onClose={() => setShowDrawer(false)}
+        title="Add New Restaurant"
+        size="lg"
+      >
+        <form onSubmit={handleCreate} className="space-y-8 pb-20">
+          {error && (
+            <div className="p-3 bg-error/10 border border-error/20 text-error text-sm rounded-lg font-medium">
+              {error}
             </div>
-            
-            <form onSubmit={handleCreate} className="flex-1 flex flex-col min-h-0">
-              <div className="flex-1 overflow-y-auto p-8 space-y-8">
-                
-                {/* Section: Basic Info */}
-                <section>
-                  <div className="flex items-center gap-2 mb-4 text-primary">
-                    <Globe className="w-4 h-4" />
-                    <h4 className="text-sm font-bold uppercase tracking-wider">Basic Details</h4>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="col-span-2">
-                      <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Restaurant Name *</label>
-                      <input 
-                        type="text" required value={formData.name}
-                        onChange={(e) => setFormData({...formData, name: e.target.value})}
-                        className="w-full p-3 border border-border-light rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" 
-                        placeholder="e.g. Spice Garden" 
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Unique Slug *</label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-sm">/</span>
-                        <input 
-                          type="text" required value={formData.slug}
-                          onChange={(e) => setFormData({...formData, slug: e.target.value})}
-                          className="w-full pl-6 pr-3 py-3 border border-border-light rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" 
-                          placeholder="spice-garden" 
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Cuisine Type</label>
-                      <input 
-                        type="text" value={formData.cuisineType}
-                        onChange={(e) => setFormData({...formData, cuisineType: e.target.value})}
-                        className="w-full p-3 border border-border-light rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" 
-                        placeholder="e.g. Italian, Indian" 
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Short Description</label>
-                      <textarea 
-                        rows="2" value={formData.description}
-                        onChange={(e) => setFormData({...formData, description: e.target.value})}
-                        className="w-full p-3 border border-border-light rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-none" 
-                        placeholder="A brief overview of the restaurant..." 
-                      />
-                    </div>
-                  </div>
-                </section>
+          )}
 
-                {/* Section: Operations */}
-                <section>
-                  <div className="flex items-center gap-2 mb-4 text-primary">
-                    <Clock className="w-4 h-4" />
-                    <h4 className="text-sm font-bold uppercase tracking-wider">Operations</h4>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Timezone</label>
-                      <select 
-                        value={formData.timezone}
-                        onChange={(e) => setFormData({...formData, timezone: e.target.value})}
-                        className="w-full p-3 border border-border-light rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none bg-white transition-all cursor-pointer"
-                      >
-                        <option>Asia/Kolkata</option>
-                        <option>UTC</option>
-                        <option>Europe/London</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Avg Wait Time</label>
-                      <input 
-                        type="text" value={formData.avgWaitTime}
-                        onChange={(e) => setFormData({...formData, avgWaitTime: e.target.value})}
-                        className="w-full p-3 border border-border-light rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" 
-                        placeholder="e.g. 15-20 mins" 
-                      />
-                    </div>
-                  </div>
-                </section>
-
-                {/* Section: Payments */}
-                <section>
-                  <div className="flex items-center gap-2 mb-4 text-primary">
-                    <CreditCard className="w-4 h-4" />
-                    <h4 className="text-sm font-bold uppercase tracking-wider">Payment Settings (Razorpay)</h4>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="col-span-2">
-                      <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Key ID</label>
-                      <input 
-                        type="text" value={formData.razorpayKey}
-                        onChange={(e) => setFormData({...formData, razorpayKey: e.target.value})}
-                        className="w-full p-3 border border-border-light rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" 
-                        placeholder="rzp_live_..." 
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Key Secret</label>
-                      <input 
-                        type="password" value={formData.razorpaySecret}
-                        onChange={(e) => setFormData({...formData, razorpaySecret: e.target.value})}
-                        className="w-full p-3 border border-border-light rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" 
-                        placeholder="••••••••••••" 
-                      />
-                    </div>
-                  </div>
-                </section>
-
-                {/* Section: Admin Account */}
-                <section>
-                  <div className="flex items-center gap-2 mb-4 text-primary">
-                    <Shield className="w-4 h-4" />
-                    <h4 className="text-sm font-bold uppercase tracking-wider">Primary Admin Account</h4>
-                  </div>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Full Name *</label>
-                      <input 
-                        type="text" required value={formData.adminName}
-                        onChange={(e) => setFormData({...formData, adminName: e.target.value})}
-                        className="w-full p-3 border border-border-light rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" 
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Email Address *</label>
-                        <input 
-                          type="email" required value={formData.adminEmail}
-                          onChange={(e) => setFormData({...formData, adminEmail: e.target.value})}
-                          className="w-full p-3 border border-border-light rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" 
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Temp Password *</label>
-                        <input 
-                          type="password" required value={formData.adminPassword}
-                          onChange={(e) => setFormData({...formData, adminPassword: e.target.value})}
-                          className="w-full p-3 border border-border-light rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" 
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
-              </div>
-              
-              <div className="p-8 bg-light-bg/50 border-t border-border-light flex gap-4">
-                <button 
-                  type="button" 
-                  onClick={() => setShowDrawer(false)} 
-                  className="flex-1 py-3 border border-border-light bg-white rounded-xl font-bold text-text-secondary hover:bg-light-bg transition-all"
-                >
-                  Cancel
-                </button>
-                <button 
-                  type="submit" 
-                  className="flex-1 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 active:scale-95"
-                >
-                  Create Restaurant
-                </button>
-              </div>
-            </form>
+          <div className="grid grid-cols-2 gap-6">
+            <ImageUpload 
+              value={formData.logo}
+              onChange={(url) => setFormData({...formData, logo: url})}
+              label="Store Logo"
+            />
+            <ImageUpload 
+              value={formData.coverImage}
+              onChange={(url) => setFormData({...formData, coverImage: url})}
+              label="Cover Image"
+            />
           </div>
-        </div>
-      )}
+
+          {/* Section: Basic Info */}
+          <section>
+            <div className="flex items-center gap-2 mb-4 text-primary">
+              <Globe className="w-4 h-4" />
+              <h4 className="text-xs font-bold uppercase tracking-wider">Basic Details</h4>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Restaurant Name *</label>
+                <input 
+                  type="text" required value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  className="w-full p-3 border border-border-light rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" 
+                  placeholder="e. Spice Garden" 
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Unique Slug *</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-sm">/</span>
+                  <input 
+                    type="text" required value={formData.slug}
+                    onChange={(e) => setFormData({...formData, slug: e.target.value})}
+                    className="w-full pl-6 pr-3 py-3 border border-border-light rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" 
+                    placeholder="spice-garden" 
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Cuisine Type</label>
+                <input 
+                  type="text" value={formData.cuisineType}
+                  onChange={(e) => setFormData({...formData, cuisineType: e.target.value})}
+                  className="w-full p-3 border border-border-light rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" 
+                  placeholder="e.g. Italian, Indian" 
+                />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Short Description</label>
+                <textarea 
+                  rows="2" value={formData.description}
+                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  className="w-full p-3 border border-border-light rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-none text-sm" 
+                  placeholder="A brief overview of the restaurant..." 
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* Section: Operations */}
+          <section>
+            <div className="flex items-center gap-2 mb-4 text-primary">
+              <Clock className="w-4 h-4" />
+              <h4 className="text-xs font-bold uppercase tracking-wider">Operations</h4>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Timezone</label>
+                <select 
+                  value={formData.timezone}
+                  onChange={(e) => setFormData({...formData, timezone: e.target.value})}
+                  className="w-full p-3 border border-border-light rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none bg-white transition-all cursor-pointer"
+                >
+                  <option>Asia/Kolkata</option>
+                  <option>UTC</option>
+                  <option>Europe/London</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Avg Wait Time</label>
+                <input 
+                  type="text" value={formData.avgWaitTime}
+                  onChange={(e) => setFormData({...formData, avgWaitTime: e.target.value})}
+                  className="w-full p-3 border border-border-light rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" 
+                  placeholder="e.g. 15-20 mins" 
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* Section: Payments */}
+          <section>
+            <div className="flex items-center gap-2 mb-4 text-primary">
+              <CreditCard className="w-4 h-4" />
+              <h4 className="text-xs font-bold uppercase tracking-wider">Payment Settings (Razorpay)</h4>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Key ID</label>
+                <input 
+                  type="text" value={formData.razorpayKey}
+                  onChange={(e) => setFormData({...formData, razorpayKey: e.target.value})}
+                  className="w-full p-3 border border-border-light rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" 
+                  placeholder="rzp_live_..." 
+                />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Key Secret</label>
+                <input 
+                  type="password" value={formData.razorpaySecret}
+                  onChange={(e) => setFormData({...formData, razorpaySecret: e.target.value})}
+                  className="w-full p-3 border border-border-light rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" 
+                  placeholder="••••••••••••" 
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* Section: Admin Account */}
+          <section>
+            <div className="flex items-center gap-2 mb-4 text-primary">
+              <Shield className="w-4 h-4" />
+              <h4 className="text-xs font-bold uppercase tracking-wider">Primary Admin Account</h4>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Full Name *</label>
+                <input 
+                  type="text" required value={formData.adminName}
+                  onChange={(e) => setFormData({...formData, adminName: e.target.value})}
+                  className="w-full p-3 border border-border-light rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" 
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Email Address *</label>
+                  <input 
+                    type="email" required value={formData.adminEmail}
+                    onChange={(e) => setFormData({...formData, adminEmail: e.target.value})}
+                    className="w-full p-3 border border-border-light rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Temp Password *</label>
+                  <input 
+                    type="password" required value={formData.adminPassword}
+                    onChange={(e) => setFormData({...formData, adminPassword: e.target.value})}
+                    className="w-full p-3 border border-border-light rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all" 
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <div className="pt-8 flex gap-4">
+            <button 
+              type="button" 
+              onClick={() => setShowDrawer(false)} 
+              className="flex-1 py-3 border border-border-light bg-white rounded-xl font-bold text-text-secondary hover:bg-light-bg transition-all"
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              disabled={submitting}
+              className="flex-1 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 active:scale-95 disabled:opacity-50"
+            >
+              {submitting ? 'Creating...' : 'Create Restaurant'}
+            </button>
+          </div>
+        </form>
+      </Drawer>
     </div>
   );
 };

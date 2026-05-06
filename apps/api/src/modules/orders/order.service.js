@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { Order } from '../../models/Order.js';
 import Product from '../../models/Product.js';
+import Table from '../../models/Table.js';
 import { transitionOrder } from './order.statemachine.js';
 import { emitToRoom } from '../../config/socketEmitter.js';
 import { SOCKET_EVENTS } from '@restaurant-saas/shared';
@@ -67,6 +68,15 @@ export const createOrder = async (storeId, customerId, { tableId, idempotencyKey
     createdAt:   order.createdAt,
   });
 
+  // Update table status if applicable
+  if (tableId) {
+    await Table.findByIdAndUpdate(tableId, { isOccupied: true });
+    await emitToRoom('/tables', `store:${storeId}`, SOCKET_EVENTS.TABLE_STATUS_UPDATED, {
+      tableId,
+      isOccupied: true
+    });
+  }
+
   return { order, isDuplicate: false };
 };
 
@@ -121,6 +131,25 @@ export const updateOrderStatus = async (storeId, orderId, newStatus) => {
       totalAmount: order.totalAmount,
       updatedAt:   new Date(),
     });
+  }
+
+  // Handle table occupancy release
+  if (order.tableId && (newStatus === 'COMPLETED' || newStatus === 'CANCELLED')) {
+    // Check if there are other active orders for this table
+    const activeOrdersCount = await Order.countDocuments({
+      storeId,
+      tableId: order.tableId,
+      _id: { $ne: order._id },
+      status: { $in: ['PENDING', 'ACCEPTED', 'PREPARING', 'READY_FOR_PICKUP'] }
+    });
+
+    if (activeOrdersCount === 0) {
+      await Table.findByIdAndUpdate(order.tableId, { isOccupied: false });
+      await emitToRoom('/tables', `store:${storeId}`, SOCKET_EVENTS.TABLE_STATUS_UPDATED, {
+        tableId: order.tableId,
+        isOccupied: false
+      });
+    }
   }
 
   return order;

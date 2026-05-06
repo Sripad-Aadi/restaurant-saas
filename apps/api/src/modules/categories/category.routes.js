@@ -66,6 +66,16 @@ router.patch('/:id/reorder', requirePermission('menu_write'), validate(reorderCa
   }
 });
 
+// POST /api/categories/bulk-reorder
+router.post('/bulk-reorder', requirePermission('menu_write'), async (req, res) => {
+  try {
+    await categoryService.bulkReorderCategories(req.tenant.storeId, req.body.items);
+    res.json({ success: true, message: 'Categories reordered successfully' });
+  } catch (err) {
+    res.status(err.status || 500).json({ success: false, message: err.message });
+  }
+});
+
 // DELETE /api/categories/:id
 router.delete('/:id', requirePermission('menu_write'), async (req, res) => {
   try {

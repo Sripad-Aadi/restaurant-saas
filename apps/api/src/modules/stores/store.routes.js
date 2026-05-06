@@ -7,7 +7,30 @@ import { createStoreSchema, updateStoreSchema, getStoresQuerySchema } from './st
 
 const router = Router();
 
-// All store routes require authentication + platform_management permission
+import { invalidateMenuCache } from '../menu/menu.service.js';
+
+// GET /api/stores/me - get current user's store
+router.get('/me', isAuthenticated, async (req, res) => {
+  try {
+    const store = await storeService.getStoreById(req.user.storeId);
+    res.json({ success: true, data: store });
+  } catch (err) {
+    res.status(err.status || 500).json({ success: false, message: err.message });
+  }
+});
+
+// PATCH /api/stores/me - update current user's store
+router.patch('/me', isAuthenticated, validate(updateStoreSchema), async (req, res) => {
+  try {
+    const store = await storeService.updateStore(req.user.storeId, req.body);
+    await invalidateMenuCache(req.user.storeId);
+    res.json({ success: true, data: store });
+  } catch (err) {
+    res.status(err.status || 500).json({ success: false, message: err.message });
+  }
+});
+
+// All store routes below require authentication + platform_management permission
 router.use(isAuthenticated, requirePermission('platform_management'));
 
 // GET /api/stores — list all stores

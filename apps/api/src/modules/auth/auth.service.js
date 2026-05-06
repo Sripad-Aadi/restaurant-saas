@@ -100,3 +100,41 @@ export const impersonateStoreAdmin = async (storeId) => {
     user: { id: user._id, name: user.name, email: user.email, role: user.role, storeId: user.storeId },
   };
 };
+
+export const updateProfile = async (userId, name, email) => {
+  const user = await User.findById(userId);
+  if (!user) throw { status: 404, message: 'User not found' };
+
+  if (email && email !== user.email) {
+    const existing = await User.findOne({ email, role: user.role });
+    if (existing) throw { status: 400, message: 'Email already in use' };
+  }
+
+  if (name) user.name = name;
+  if (email) user.email = email;
+
+  await user.save();
+  return { id: user._id, name: user.name, email: user.email, role: user.role, storeId: user.storeId, notifications: user.notifications };
+};
+
+export const updatePassword = async (userId, currentPassword, newPassword) => {
+  const user = await User.findById(userId).select('+password');
+  if (!user) throw { status: 404, message: 'User not found' };
+
+  const isMatch = await bcrypt.compare(currentPassword, user.password);
+  if (!isMatch) throw { status: 400, message: 'Incorrect current password' };
+
+  user.password = newPassword;
+  await user.save();
+  return true;
+};
+
+export const updateNotifications = async (userId, notifications) => {
+  const user = await User.findByIdAndUpdate(
+    userId,
+    { $set: { notifications } },
+    { new: true }
+  );
+  if (!user) throw { status: 404, message: 'User not found' };
+  return user.notifications;
+};

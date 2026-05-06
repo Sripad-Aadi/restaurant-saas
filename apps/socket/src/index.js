@@ -8,12 +8,16 @@ import { pubClient, subClient } from './config/redis.js';
 import socketAuth from './middleware/socketAuth.js';
 import registerOrdersNamespace from './namespaces/orders.js';
 import registerAnalyticsNamespace from './namespaces/analytics.js';
+import registerTablesNamespace from './namespaces/tables.js';
 
 const httpServer = createServer();
 
 const io = new Server(httpServer, {
   cors: {
-    origin:      process.env.CLIENT_URL || 'http://localhost:3000',
+    origin:      [
+      process.env.CLIENT_URL  || 'http://localhost:3000',
+      process.env.ADMIN_URL   || 'http://localhost:3001',
+    ],
     methods:     ['GET', 'POST'],
     credentials: true,
   },
@@ -26,6 +30,7 @@ io.use(socketAuth);
 
 const ordersNsp    = registerOrdersNamespace(io);
 const analyticsNsp = registerAnalyticsNamespace(io);
+const tablesNsp    = registerTablesNamespace(io);
 
 // ── Listen for events published by the API ───────────────────
 const subscriber = subClient.duplicate();
@@ -43,6 +48,8 @@ subscriber.on('message', (channel, message) => {
       ordersNsp.to(room).emit(event, data);
     } else if (namespace === '/analytics') {
       analyticsNsp.to(room).emit(event, data);
+    } else if (namespace === '/tables') {
+      tablesNsp.to(room).emit(event, data);
     }
   } catch (err) {
     console.error('Failed to process socket:emit message:', err.message);

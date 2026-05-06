@@ -1,7 +1,9 @@
 import roleGuard from '../middleware/roleGuard.js';
+import socketAuth from '../middleware/socketAuth.js';
 
 const registerAnalyticsNamespace = (io) => {
   const analyticsNsp = io.of('/analytics');
+  analyticsNsp.use(socketAuth);
 
   analyticsNsp.on('connection', (socket) => {
     const user = socket.data.user;

@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import { ROLES } from '@restaurant-saas/shared';
 
 export const isAuthenticated = async (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -49,8 +50,8 @@ export const isAuthenticated = async (req, res, next) => {
 };
 
 export const isAdmin = (req, res, next) => {
-  const role = req.user?.role?.toUpperCase();
-  if (role === 'ADMIN' || role === 'SUPER_ADMIN' || role === 'SUPERADMIN') {
+  const role = req.user?.role;
+  if (role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN) {
     next();
   } else {
     res.status(403).json({ success: false, message: 'Admin privileges required' });
@@ -58,8 +59,8 @@ export const isAdmin = (req, res, next) => {
 };
 
 export const isSuperAdmin = (req, res, next) => {
-  const role = req.user?.role?.toUpperCase();
-  if (role === 'SUPER_ADMIN' || role === 'SUPERADMIN') {
+  const role = req.user?.role;
+  if (role === ROLES.SUPER_ADMIN) {
     next();
   } else {
     res.status(403).json({ success: false, message: 'Super Admin privileges required' });

@@ -1,7 +1,9 @@
 import roleGuard from '../middleware/roleGuard.js';
+import socketAuth from '../middleware/socketAuth.js';
 
 const registerOrdersNamespace = (io) => {
   const ordersNsp = io.of('/orders');
+  ordersNsp.use(socketAuth);
 
   ordersNsp.on('connection', (socket) => {
     const user = socket.data.user;

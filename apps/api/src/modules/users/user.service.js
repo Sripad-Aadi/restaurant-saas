@@ -38,3 +38,34 @@ export const toggleUserStatus = async (userId) => {
   await user.save();
   return user;
 };
+
+export const createUser = async (userData) => {
+  const existing = await User.findOne({ email: userData.email, role: userData.role });
+  if (existing) {
+    throw new Error('User with this email and role already exists');
+  }
+
+  const user = await User.create(userData);
+  return user;
+};
+
+export const updateUser = async (userId, userData) => {
+  const user = await User.findById(userId);
+  if (!user) throw new Error('User not found');
+
+  // Handle password update separately if provided
+  if (userData.password) {
+    user.password = userData.password;
+  }
+
+  // Update other fields
+  const allowedUpdates = ['name', 'email', 'role', 'storeId', 'isActive'];
+  allowedUpdates.forEach(field => {
+    if (userData[field] !== undefined) {
+      user[field] = userData[field];
+    }
+  });
+
+  await user.save();
+  return user;
+};

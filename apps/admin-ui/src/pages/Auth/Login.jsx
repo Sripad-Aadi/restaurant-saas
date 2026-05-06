@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../AuthContext';
+import { ROLES } from '@restaurant-saas/shared';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -18,11 +19,11 @@ const Login = () => {
     try {
       const user = await login(email, password);
       
-      if (user.role === 'CUSTOMER') {
+      if (user.role === ROLES.CUSTOMER) {
         throw new Error('Access denied. Admin or Super Admin privileges required.');
       }
 
-      if (user.role === 'SUPER_ADMIN' || user.role === 'superadmin') {
+      if (user.role === ROLES.SUPER_ADMIN) {
         navigate('/superadmin/dashboard');
       } else {
         navigate('/admin/dashboard');

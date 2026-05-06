@@ -1,7 +1,7 @@
 export const ROLES = {
-  SUPER_ADMIN: 'SUPER_ADMIN',
-  ADMIN: 'ADMIN',
-  CUSTOMER: 'CUSTOMER'
+  SUPER_ADMIN: 'superadmin',
+  ADMIN: 'admin',
+  CUSTOMER: 'customer'
 };
 
 export const PERMISSIONS = {

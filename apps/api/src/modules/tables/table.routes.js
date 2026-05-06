@@ -55,4 +55,14 @@ router.patch('/:id', validate(updateTableSchema), async (req, res) => {
   }
 });
 
+// DELETE /api/tables/:id
+router.delete('/:id', async (req, res) => {
+  try {
+    await tableService.deleteTable(req.tenant.storeId, req.params.id);
+    res.json({ success: true, message: 'Table deleted' });
+  } catch (err) {
+    res.status(err.status || 500).json({ success: false, message: err.message });
+  }
+});
+
 export default router;

@@ -21,9 +21,12 @@ export const createStoreSchema = z.object({
 });
 
 export const updateStoreSchema = z.object({
-  name:     z.string().min(2).optional(),
-  logo:     z.string().url().optional(),
-  timezone: z.string().optional(),
+  name:        z.string().min(2).optional(),
+  logo:        z.union([z.string().url(), z.literal('')]).optional(),
+  timezone:    z.string().optional(),
+  description: z.string().max(500).optional(),
+  cuisineType: z.string().optional(),
+  avgWaitTime: z.string().optional(),
 });
 
 export const getStoresQuerySchema = z.object({

@@ -1,11 +1,8 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import { ROLES as USER_ROLES } from '@restaurant-saas/shared';
+export { USER_ROLES };
 
-export const USER_ROLES = {
-  SUPER_ADMIN: 'superadmin',
-  ADMIN: 'admin',
-  CUSTOMER: 'customer',
-};
 
 const userSchema = new mongoose.Schema(
   {
@@ -61,6 +58,10 @@ const userSchema = new mongoose.Schema(
     tokenVersion: {
       type: Number,
       default: 0,
+    },
+    notifications: {
+      emailAlerts: { type: Boolean, default: true },
+      orderAlerts: { type: Boolean, default: true },
     },
   },
   {

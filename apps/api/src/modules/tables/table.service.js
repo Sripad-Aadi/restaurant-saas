@@ -19,8 +19,8 @@ export const createTable = async (storeId, storeSlug, data) => {
     storeId,
     tableNumber: data.tableNumber,
     label:       data.label || `Table ${data.tableNumber}`,
-    qrCodeUrl:   qrDataUrl,
-    qrTargetUrl: url,
+    qrCodeUrl:   url,
+    qrImageUrl:  qrDataUrl,
   });
 };
 
@@ -40,6 +40,12 @@ export const updateTable = async (storeId, id, updates) => {
     updates,
     { new: true, runValidators: true }
   );
+  if (!table) throw { status: 404, message: 'Table not found' };
+  return table;
+};
+
+export const deleteTable = async (storeId, id) => {
+  const table = await Table.findOneAndDelete({ storeId, _id: id });
   if (!table) throw { status: 404, message: 'Table not found' };
   return table;
 };

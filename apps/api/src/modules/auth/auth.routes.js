@@ -81,8 +81,43 @@ router.post('/logout', isAuthenticated, async (req, res) => {
   }
 });
 
-router.get('/me', isAuthenticated, (req, res) => {
-  res.json({ success: true, user: req.user });
+router.get('/me', isAuthenticated, async (req, res) => {
+  try {
+    const user = await import('../../models/User.js').then(m => m.default.findById(req.user.id));
+    res.json({ success: true, user: { ...req.user, notifications: user?.notifications } });
+  } catch (err) {
+    res.json({ success: true, user: req.user });
+  }
+});
+
+router.patch('/profile', isAuthenticated, async (req, res) => {
+  try {
+    const { name, email } = req.body;
+    const user = await authService.updateProfile(req.user.id, name, email);
+    res.json({ success: true, user });
+  } catch (err) {
+    res.status(err.status || 500).json({ success: false, message: err.message });
+  }
+});
+
+router.patch('/password', isAuthenticated, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    await authService.updatePassword(req.user.id, currentPassword, newPassword);
+    res.json({ success: true, message: 'Password updated successfully' });
+  } catch (err) {
+    res.status(err.status || 500).json({ success: false, message: err.message });
+  }
+});
+
+router.patch('/notifications', isAuthenticated, async (req, res) => {
+  try {
+    const { notifications } = req.body;
+    const updatedNotifications = await authService.updateNotifications(req.user.id, notifications);
+    res.json({ success: true, notifications: updatedNotifications });
+  } catch (err) {
+    res.status(err.status || 500).json({ success: false, message: err.message });
+  }
 });
 
 import { isSuperAdmin } from '../../middleware/auth.js';
