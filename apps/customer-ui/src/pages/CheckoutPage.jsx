@@ -79,13 +79,32 @@ export default function CheckoutPage() {
           <h2 className="font-bold text-slate-800 mb-4">Order Summary</h2>
           <div className="space-y-4">
             {items.map(({ product, quantity }) => (
-              <div key={product._id} className="flex justify-between items-start">
-                <div>
-                  <p className="font-medium text-slate-800">{product.name}</p>
-                  <p className="text-slate-500 text-sm">₹{(product.price / 100).toFixed(2)} x {quantity}</p>
+              <div key={product._id} className="flex justify-between items-center py-2">
+                <div className="flex-1 pr-4">
+                  <p className="font-bold text-slate-800 text-sm">{product.name}</p>
+                  <p className="text-slate-500 text-xs font-medium">₹{(product.price / 100).toFixed(2)} / unit</p>
                 </div>
-                <div className="font-semibold text-slate-900">
-                  ₹{((product.price * quantity) / 100).toFixed(2)}
+                
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 bg-slate-50 border border-slate-100 rounded-xl p-1">
+                    <button 
+                      onClick={() => updateQuantity(product._id, -1)}
+                      className="w-7 h-7 flex items-center justify-center bg-white text-slate-900 rounded-lg shadow-sm border border-slate-200 active:scale-90 transition-transform"
+                    >
+                      <span className="font-bold text-xs">−</span>
+                    </button>
+                    <span className="font-black text-slate-900 w-5 text-center text-xs">{quantity}</span>
+                    <button 
+                      onClick={() => updateQuantity(product._id, 1)}
+                      className="w-7 h-7 flex items-center justify-center bg-white text-slate-900 rounded-lg shadow-sm border border-slate-200 active:scale-90 transition-transform"
+                    >
+                      <span className="font-bold text-xs">+</span>
+                    </button>
+                  </div>
+                  
+                  <div className="w-20 text-right font-black text-slate-900 text-sm">
+                    ₹{((product.price * quantity) / 100).toFixed(2)}
+                  </div>
                 </div>
               </div>
             ))}

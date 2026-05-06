@@ -38,14 +38,24 @@ export const getMenuBySlug = async (storeSlug) => {
         id:          p._id,
         name:        p.name,
         description: p.description,
-        price:       (p.price / 100).toFixed(2),
+        price:       p.price,
         image:       p.image,
         foodType:    p.foodType,
+        isAvailable: p.isAvailable,
       })),
   }));
 
   const responseData = {
-    store: { name: store.name, logo: store.logo },
+    store: { 
+      id: store._id,
+      name: store.name, 
+      logo: store.logo,
+      coverImage: store.coverImage,
+      description: store.description,
+      cuisineType: store.cuisineType,
+      avgWaitTime: store.avgWaitTime,
+      amenities: store.amenities
+    },
     menu,
   };
 

@@ -5,7 +5,7 @@ import api from '../api';
 import CartWidget from '../components/CartWidget';
 
 export default function MenuPage() {
-  const { storeSlug, cart, addToCart } = useCustomer();
+  const { storeSlug, cart, addToCart, updateQuantity } = useCustomer();
   const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
@@ -88,9 +88,9 @@ export default function MenuPage() {
         ) : (
           activeProducts.map((product) => (
             <div key={product._id} className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow border border-gray-100 overflow-hidden flex flex-col group">
-              {product.imageUrl ? (
+              {product.image ? (
                 <div className="h-48 w-full bg-gray-100 overflow-hidden">
-                    <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 </div>
               ) : (
                 <div className="h-32 w-full bg-slate-50 flex items-center justify-center text-slate-300">
@@ -106,16 +106,34 @@ export default function MenuPage() {
                   <p className="text-lg font-extrabold text-slate-900">
                     ₹{(product.price / 100).toFixed(2)}
                   </p>
-                  <button
-                    onClick={() => addToCart(product)}
-                    disabled={!product.isAvailable}
-                    className={`px-5 py-2 rounded-xl text-sm font-bold transition-all shadow-sm
-                      ${product.isAvailable 
-                        ? 'bg-primary text-white hover:bg-orange-600 active:scale-95' 
-                        : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}
-                  >
-                    {product.isAvailable ? 'Add +' : 'Sold Out'}
-                  </button>
+                  {cart[product._id] ? (
+                    <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-1 animate-in zoom-in duration-200">
+                      <button 
+                        onClick={() => updateQuantity(product._id, -1)}
+                        className="w-8 h-8 flex items-center justify-center bg-white text-slate-900 rounded-lg shadow-sm hover:bg-slate-50 active:scale-90 transition-all"
+                      >
+                        <span className="font-black">−</span>
+                      </button>
+                      <span className="font-black text-slate-900 w-8 text-center text-sm">{cart[product._id].quantity}</span>
+                      <button 
+                        onClick={() => updateQuantity(product._id, 1)}
+                        className="w-8 h-8 flex items-center justify-center bg-white text-slate-900 rounded-lg shadow-sm hover:bg-slate-50 active:scale-90 transition-all"
+                      >
+                        <span className="font-black">+</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => addToCart(product)}
+                      disabled={!product.isAvailable}
+                      className={`px-6 py-2 rounded-xl text-sm font-black transition-all shadow-sm
+                        ${product.isAvailable 
+                          ? 'bg-primary text-white hover:bg-orange-600 active:scale-95' 
+                          : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}
+                    >
+                      {product.isAvailable ? 'Add +' : 'Sold Out'}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

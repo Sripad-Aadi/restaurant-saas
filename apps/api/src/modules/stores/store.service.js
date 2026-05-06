@@ -3,6 +3,7 @@ import Store from '../../models/Store.js';
 import User from '../../models/User.js';
 import Order from '../../models/Order.js';
 import Product from '../../models/Product.js';
+import { invalidateMenuCache } from '../menu/menu.service.js';
 
 export const createStore = async (storeData, adminData) => {
   // Check slug uniqueness
@@ -132,6 +133,8 @@ export const deactivateStore = async (id) => {
 export const updateStore = async (id, updates) => {
   const store = await Store.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
   if (!store) throw { status: 404, message: 'Store not found' };
+  
+  await invalidateMenuCache(store._id);
   return store;
 };
 

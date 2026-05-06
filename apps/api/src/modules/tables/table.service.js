@@ -2,8 +2,8 @@ import QRCode from 'qrcode';
 import Table from '../../models/Table.js';
 
 const generateQRCode = async (storeSlug, tableNumber) => {
-  const url = `${process.env.CLIENT_URL}/${storeSlug}/table/${tableNumber}`;
-  // Returns a base64 data URL — store it directly, no Cloudinary needed for now
+  const url = `${process.env.CLIENT_URL}/table/${storeSlug}/${tableNumber}`;
+  // Returns a base64 data URL
   const qrDataUrl = await QRCode.toDataURL(url, { width: 400, margin: 2 });
   return { qrDataUrl, url };
 };

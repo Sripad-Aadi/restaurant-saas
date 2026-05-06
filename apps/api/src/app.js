@@ -41,6 +41,7 @@ app.use('/api/categories', standardLimiter, categoryRoutes);
 app.use('/api/products', standardLimiter, productRoutes);
 app.use('/api/tables', standardLimiter, tableRoutes);
 app.use('/api/menu', standardLimiter, menuRoutes);
+app.use('/api/v1/menu', standardLimiter, menuRoutes);
 app.use('/api/orders', standardLimiter, orderRoutes);
 app.use('/api/payments', standardLimiter, paymentRoutes);
 app.use('/api/analytics', standardLimiter, analyticsRoutes);
