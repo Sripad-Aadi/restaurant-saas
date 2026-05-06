@@ -174,7 +174,7 @@ export const getStoreKPIs = async (storeId) => {
       id: order.orderNumber || order._id.toString().substring(0,8),
       table: order.tableId ? `Table ${order.tableId.tableNumber || order.tableNumber}` : 'Takeaway',
       items: itemsStr || 'Custom Order',
-      amount: `₹${order.total}`,
+      amount: order.total,
       status: order.status,
       time: timeAgo
     };

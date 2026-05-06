@@ -99,6 +99,12 @@ const orderSchema = new mongoose.Schema(
       default: ORDER_STATUS.PENDING,
     },
 
+    paymentStatus: {
+      type: String,
+      enum: ['PENDING', 'PAID', 'FAILED', 'REFUNDED'],
+      default: 'PENDING',
+    },
+
     // Status history for the timeline stepper in both admin and customer UI
     statusHistory: [
       {
@@ -154,11 +160,10 @@ orderSchema.index({ storeId: 1, tableId: 1, status: 1 });
 
 // ─── Hooks ───────────────────────────────────────────────────────────────────
 // Auto-push to statusHistory on every status change
-orderSchema.pre('save', function (next) {
+orderSchema.pre('save', function () {
   if (this.isModified('status')) {
     this.statusHistory.push({ status: this.status });
   }
-  next();
 });
 
 // ─── Statics ─────────────────────────────────────────────────────────────────

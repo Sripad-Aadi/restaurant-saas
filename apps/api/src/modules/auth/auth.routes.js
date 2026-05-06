@@ -43,6 +43,16 @@ router.post('/login', authLimiter, validate(loginSchema), async (req, res) => {
   }
 });
 
+router.post('/guest', async (req, res) => {
+  try {
+    const { storeId } = req.body;
+    const { accessToken, user } = await authService.guestLogin(storeId);
+    res.json({ success: true, accessToken, user });
+  } catch (err) {
+    res.status(err.status || 500).json({ success: false, message: err.message });
+  }
+});
+
 router.post('/refresh-token', async (req, res) => {
   try {
     const refreshToken = req.cookies?.refreshToken;

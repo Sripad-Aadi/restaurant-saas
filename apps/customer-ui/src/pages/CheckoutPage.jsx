@@ -148,7 +148,7 @@ export default function CheckoutPage() {
               <span>Placing Order...</span>
             </>
           ) : (
-            <span>Confirm & Pay ₹{(finalTotal / 100).toFixed(2)}</span>
+            <span>Confirm Order • ₹{(finalTotal / 100).toFixed(2)}</span>
           )}
         </button>
       </div>

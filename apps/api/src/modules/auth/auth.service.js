@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
@@ -127,6 +128,25 @@ export const updatePassword = async (userId, currentPassword, newPassword) => {
   user.password = newPassword;
   await user.save();
   return true;
+};
+
+export const guestLogin = async (storeId) => {
+  // Create a minimal user record for the guest or just return a token
+  // For simplicity and to avoid cluttering the DB, we can just return a token with a temporary guest ID
+  const guestId = new mongoose.Types.ObjectId();
+  
+  const token = jwt.sign(
+    { 
+      userId: guestId, 
+      role: 'customer', 
+      storeId: storeId,
+      isGuest: true 
+    },
+    process.env.JWT_ACCESS_SECRET,
+    { expiresIn: '24h' }
+  );
+
+  return { accessToken: token, user: { id: guestId, role: 'customer', isGuest: true } };
 };
 
 export const updateNotifications = async (userId, notifications) => {

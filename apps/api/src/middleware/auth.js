@@ -19,6 +19,18 @@ export const isAuthenticated = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Invalid token payload' });
     }
 
+    // Support guest tokens (stateless)
+    if (decoded.isGuest) {
+      req.user = {
+        id: userId,
+        userId: userId,
+        role: decoded.role || 'customer',
+        storeId: decoded.storeId,
+        isGuest: true
+      };
+      return next();
+    }
+
     // Fetch user from DB to verify existence and session version
     const user = await User.findById(userId).select('+tokenVersion');
     
@@ -36,8 +48,8 @@ export const isAuthenticated = async (req, res, next) => {
 
     // Attach user to request - use plain object to avoid Mongoose issues in other middlewares
     req.user = user.toObject();
-    // Ensure ID is present as 'id' for compatibility
     req.user.id = user._id.toString();
+    req.user.userId = user._id.toString();
     
     next();
   } catch (err) {

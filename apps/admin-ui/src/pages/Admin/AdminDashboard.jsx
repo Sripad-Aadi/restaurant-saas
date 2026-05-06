@@ -96,7 +96,7 @@ const AdminDashboard = () => {
         />
         <KPICard 
           title="Today's Revenue" 
-          value={`₹${kpis.todayRevenue.toLocaleString()}`} 
+          value={`₹${(kpis.todayRevenue / 100).toLocaleString()}`} 
           subtitle="Completed sales today" 
           icon={ArrowUpRight} 
           color="success" 
@@ -112,7 +112,7 @@ const AdminDashboard = () => {
         />
         <KPICard 
           title="Avg Order Value" 
-          value={`₹${kpis.avgOrderValue}`} 
+          value={`₹${(kpis.avgOrderValue / 100).toFixed(2)}`} 
           subtitle="Last 30 days" 
           icon={CheckCircle} 
           color="info" 
@@ -150,7 +150,7 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2">
-                      <span className="font-semibold text-text-primary">{order.amount}</span>
+                      <span className="font-semibold text-text-primary">₹{(order.amount / 100).toLocaleString()}</span>
                       <StatusBadge status={order.status} />
                     </div>
                   </div>
@@ -176,7 +176,7 @@ const AdminDashboard = () => {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={kpis.revenueData}>
                     <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} textAnchor="middle" />
-                    <Tooltip cursor={{fill: '#F8FAFC'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                    <Tooltip cursor={{fill: '#F8FAFC'}} contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} formatter={(value) => `₹${(value / 100).toLocaleString()}`} />
                     <Bar dataKey="value" fill="#6366F1" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>

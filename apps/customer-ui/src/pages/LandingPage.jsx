@@ -27,6 +27,13 @@ export default function LandingPage() {
         setStoreSlug(storeSlug);
         setTableId(tableId);
         setStoreId(data.store.id);
+
+        // Always refresh guest token on landing to ensure validity for the current store context
+        const authRes = await api.post('/auth/guest', { storeId: data.store.id });
+        if (authRes.data.success) {
+          localStorage.setItem('token', authRes.data.accessToken);
+          localStorage.setItem('user', JSON.stringify(authRes.data.user));
+        }
         
       } catch (err) {
         console.error(err);

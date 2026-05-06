@@ -10,29 +10,45 @@ const router = Router();
 
 router.use(isAuthenticated, tenant);
 
-// POST /api/orders — customer creates an order
-router.post('/', requirePermission('order_create'), validate(createOrderSchema), async (req, res) => {
-  try {
-    const idempotencyKey = req.headers['x-idempotency-key'] || req.body.idempotencyKey;
-    if (!idempotencyKey) {
-      return res.status(400).json({ success: false, message: 'Idempotency key is required (header: X-Idempotency-Key or body: idempotencyKey)' });
+// POST /api/orders — customer places a new order
+router.post(
+  '/',
+  requirePermission('order_create'),
+  validate(createOrderSchema),
+  async (req, res) => {
+    try {
+      const idempotencyKey = req.headers['x-idempotency-key'] || req.body.idempotencyKey;
+      console.log('[/orders POST] Starting order creation', {
+        storeId: req.tenant.storeId,
+        userId: req.user.userId,
+        idempotencyKey
+      });
+
+      const { order, isDuplicate } = await orderService.createOrder(
+        req.tenant.storeId,
+        req.user.userId,
+        { ...req.body, idempotencyKey }
+      );
+
+      console.log('[/orders POST] Order created successfully', { 
+        orderId: order?._id, 
+        isDuplicate 
+      });
+
+      res.status(isDuplicate ? 200 : 201).json({
+        success: true,
+        data: order,
+        isDuplicate
+      });
+    } catch (err) {
+      console.error('[/orders POST] Error:', err);
+      res.status(err.status || 500).json({ 
+        success: false, 
+        message: err.message || 'Internal Server Error' 
+      });
     }
-
-    const { order, isDuplicate } = await orderService.createOrder(
-      req.tenant.storeId,
-      req.user.userId,
-      { ...req.body, idempotencyKey }
-    );
-
-    res.status(isDuplicate ? 200 : 201).json({
-      success: true,
-      isDuplicate,
-      data: order,
-    });
-  } catch (err) {
-    res.status(err.status || 500).json({ success: false, message: err.message });
   }
-});
+);
 
 // GET /api/orders — admin gets all orders for their store
 router.get('/', requirePermission('order_read_all'), async (req, res) => {
@@ -100,5 +116,15 @@ router.patch(
     }
   }
 );
+
+// POST /api/orders/:id/pay — customer marks order as paid (mock)
+router.post('/:id/pay', async (req, res) => {
+  try {
+    const order = await orderService.processOrderPayment(req.tenant.storeId, req.params.id);
+    res.json({ success: true, data: order });
+  } catch (err) {
+    res.status(err.status || 500).json({ success: false, message: err.message });
+  }
+});
 
 export default router;

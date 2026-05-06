@@ -3,7 +3,7 @@ import { useAuth } from '../AuthContext';
 import { createSocketConnection } from '../socket';
 import api from '../api';
 import { Clock, CheckCircle2, Loader2, Utensils, XCircle } from 'lucide-react';
-import { ORDER_STATUSES } from '@restaurant-saas/shared';
+import { ORDER_STATUSES, SOCKET_EVENTS } from '@restaurant-saas/shared';
 
 const STATUS_COLORS = {
   [ORDER_STATUSES.PENDING]: 'bg-yellow-100 text-yellow-800 border-yellow-200',
@@ -32,18 +32,23 @@ export default function LiveOrders() {
     }
     fetchActiveOrders();
 
-    // In a real app we need to pass the access token
-    // For simplicity, we just connect. In real flow, token exists in api interceptor or local memory
-    const socket = createSocketConnection('/orders', 'DUMMY_TOKEN_OR_REAL_TOKEN_HERE');
+    // Use the /admin namespace as defined in the backend
+    const socket = createSocketConnection('/admin', localStorage.getItem('token'));
     socket.connect();
 
-    socket.on('ORDER_STATUS_UPDATED', (payload) => {
-      setOrders(prev => prev.map(o => o._id === payload.orderId ? { ...o, status: payload.status } : o));
+    // Listen for new orders
+    socket.on(SOCKET_EVENTS.ORDER_NEW, (payload) => {
+      console.log('New order received via socket', payload);
+      // Fetch the full order details since payload might be partial
+      fetchActiveOrders();
     });
 
-    socket.on('ORDER_CONFIRMED', (payload) => {
-      // New order incoming
-      setOrders(prev => [payload, ...prev]);
+    // Listen for status changes
+    socket.on(SOCKET_EVENTS.ORDER_STATUS_CHANGED, (payload) => {
+      console.log('Order status updated via socket', payload);
+      setOrders(prev => prev.map(o => 
+        o._id === payload.orderId ? { ...o, status: payload.status } : o
+      ));
     });
 
     return () => {

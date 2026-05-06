@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   Wifi, Search, MoreHorizontal, ChefHat, Check, X, Clock, 
   MapPin, Receipt, Trash2, ArrowRight, Loader2, ShoppingBag,
-  Printer, Bell
+  Printer, Bell, AlertCircle
 } from 'lucide-react';
 import StatusBadge from '../../components/StatusBadge';
 import api from '../../api';
@@ -51,21 +51,27 @@ const LiveOrders = () => {
       });
 
       socketRef.current.on(SOCKET_EVENTS.ORDER_NEW, (newOrder) => {
+        console.log('[Socket] New order received:', newOrder.orderNumber);
         setOrders(prev => [newOrder, ...prev]);
-        // Play notification sound
         new Audio('/notification.mp3').play().catch(() => {});
       });
 
-      // Updated event name from Phase 4.2
       socketRef.current.on(SOCKET_EVENTS.ORDER_STATUS_CHANGED, (data) => {
+        console.log('[Socket] Order update received:', data);
         setOrders(prev => prev.map(order => 
-          order._id === data.orderId ? { ...order, status: data.status } : order
+          order._id === data.orderId ? { 
+            ...order, 
+            status: data.status || order.status, 
+            paymentStatus: data.paymentStatus || order.paymentStatus 
+          } : order
         ));
         
         if (selectedOrder?._id === data.orderId) {
-          // Re-fetch or update selected order to get full history if needed
-          // For now just update status
-          setSelectedOrder(prev => ({ ...prev, status: data.status }));
+          setSelectedOrder(prev => prev ? { 
+            ...prev, 
+            status: data.status || prev.status,
+            paymentStatus: data.paymentStatus || prev.paymentStatus
+          } : null);
         }
       });
 
@@ -77,12 +83,26 @@ const LiveOrders = () => {
     };
   }, [user?.storeId]);
 
+  const [toast, setToast] = useState(null); // { type, message }
+
+  const showToast = (type, message) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   const handleStatusUpdate = async (orderId, newStatus) => {
+    // Optimistic update for snappiness
+    const previousOrders = [...orders];
+    setOrders(prev => prev.map(o => o._id === orderId ? { ...o, status: newStatus } : o));
+    
     try {
       await api.patch(`/orders/${orderId}/status`, { status: newStatus });
-      // UI will update via socket event
+      setSelectedOrder(null);
+      showToast('success', `Order status updated to ${newStatus}`);
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to update status');
+      // Rollback on failure
+      setOrders(previousOrders);
+      showToast('error', err.response?.data?.message || 'Failed to update status');
     }
   };
 
@@ -158,6 +178,20 @@ const LiveOrders = () => {
 
   return (
     <div className="flex flex-col h-full relative">
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-top duration-300">
+          <div className={`px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border-2 ${
+            toast.type === 'success' ? 'bg-success/10 border-success/20 text-success' :
+            toast.type === 'error' ? 'bg-error/10 border-error/20 text-error' :
+            'bg-amber-50 border-amber-100 text-amber-700'
+          }`}>
+            {toast.type === 'success' ? <Check className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+            <span className="font-black text-sm uppercase tracking-tight">{toast.message}</span>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
           <h2 className="text-2xl font-bold text-text-primary">Live Orders</h2>
@@ -236,7 +270,14 @@ const LiveOrders = () => {
                       </div>
                     </div>
                   </div>
-                  <StatusBadge status={order.status} className="shadow-sm" />
+                  <div className="flex flex-col items-end gap-2">
+                    <StatusBadge status={order.status} className="shadow-sm" />
+                    {order.paymentStatus === 'PAID' && (
+                      <span className="bg-green-100 text-green-700 text-[10px] font-black px-2 py-0.5 rounded-lg border border-green-200 flex items-center gap-1 shadow-sm">
+                        <Check className="w-3 h-3" /> PAID
+                      </span>
+                    )}
+                  </div>
                 </div>
                 
                 <div className="text-sm text-text-secondary mb-6 flex-1 bg-light-bg/50 p-3 rounded-xl border border-border-light/50 line-clamp-3">
@@ -287,6 +328,11 @@ const LiveOrders = () => {
                   <div className="flex items-center gap-2">
                     <h3 className="font-mono font-black text-2xl text-text-primary tracking-tighter">{selectedOrder.orderNumber}</h3>
                     <StatusBadge status={selectedOrder.status} />
+                    {selectedOrder.paymentStatus === 'PAID' && (
+                      <span className="bg-green-50 text-green-600 text-xs font-black px-3 py-1 rounded-xl border border-green-200 flex items-center gap-1 shadow-sm">
+                        <Check className="w-3 h-3" /> PAID
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-text-secondary font-bold uppercase tracking-widest mt-1">
                     {selectedOrder.tableNumber ? `Table ${selectedOrder.tableNumber}` : 'Online/Queue Order'} • {new Date(selectedOrder.createdAt).toLocaleTimeString()}

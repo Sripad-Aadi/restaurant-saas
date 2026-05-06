@@ -148,7 +148,7 @@ const AdminAnalytics = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatsCard 
           title="Total Revenue" 
-          value={`₹${totalRevenue.toLocaleString()}`} 
+          value={`₹${(totalRevenue / 100).toLocaleString()}`} 
           icon={TrendingUp} 
           color="success" 
           loading={loading}
@@ -162,7 +162,7 @@ const AdminAnalytics = () => {
         />
         <StatsCard 
           title="Avg. Ticket Size" 
-          value={`₹${avgOrderValue}`} 
+          value={`₹${(avgOrderValue / 100).toFixed(2)}`} 
           icon={BarChart2} 
           color="info" 
           loading={loading}
@@ -196,10 +196,10 @@ const AdminAnalytics = () => {
                     axisLine={false} 
                     tickFormatter={(val) => new Date(val).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                   />
-                  <YAxis fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `₹${val}`} />
+                  <YAxis fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `₹${(val / 100).toLocaleString()}`} />
                   <Tooltip 
                     contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
-                    formatter={(value) => [`₹${value.toLocaleString()}`, 'Revenue']}
+                    formatter={(value) => [`₹${(value / 100).toLocaleString()}`, 'Revenue']}
                     labelFormatter={(label) => new Date(label).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
                   />
                   <Area type="monotone" dataKey="revenue" stroke="#6366F1" fillOpacity={1} fill="url(#colorRevenue)" strokeWidth={2} />
@@ -238,7 +238,7 @@ const AdminAnalytics = () => {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => `₹${value.toLocaleString()}`} />
+                  <Tooltip formatter={(value) => `₹${(value / 100).toLocaleString()}`} />
                   <Legend verticalAlign="bottom" height={36}/>
                 </PieChart>
               </ResponsiveContainer>
@@ -310,7 +310,7 @@ const AdminAnalytics = () => {
                     <tr key={index} className="hover:bg-light-bg/30 transition-colors">
                       <td className="px-6 py-4 text-sm font-medium text-text-primary">{item._id}</td>
                       <td className="px-6 py-4 text-sm text-text-secondary">{item.count}</td>
-                      <td className="px-6 py-4 text-sm text-text-primary text-right font-semibold">₹{item.revenue.toLocaleString()}</td>
+                      <td className="px-6 py-4 text-sm text-text-primary text-right font-semibold">₹{(item.revenue / 100).toLocaleString()}</td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-3">
                           <div className="w-24 bg-light-bg rounded-full h-1.5 hidden sm:block">
