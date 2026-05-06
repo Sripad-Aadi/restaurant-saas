@@ -321,9 +321,42 @@ export const getDetailedStoreAnalytics = async (storeId, startDate, endDate) => 
     { $limit: 10 }
   ]);
 
+  // 4. Category Breakdown
+  const categoryBreakdown = await Order.aggregate([
+    { $match: matchStage },
+    { $unwind: '$items' },
+    {
+      $lookup: {
+        from: 'products',
+        localField: 'items.productId',
+        foreignField: '_id',
+        as: 'product'
+      }
+    },
+    { $unwind: '$product' },
+    {
+      $lookup: {
+        from: 'categories',
+        localField: 'product.categoryId',
+        foreignField: '_id',
+        as: 'category'
+      }
+    },
+    { $unwind: '$category' },
+    {
+      $group: {
+        _id: '$category.name',
+        revenue: { $sum: '$items.subtotal' },
+        count: { $sum: '$items.quantity' }
+      }
+    },
+    { $sort: { revenue: -1 } }
+  ]);
+
   return {
     revenueTrend,
     peakHours: formattedPeakHours,
-    topItems
+    topItems,
+    categoryBreakdown
   };
 };

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, TrendingUp, Users, ShoppingBag, BarChart2, Loader2, Download } from 'lucide-react';
+import { Calendar, TrendingUp, Users, ShoppingBag, BarChart2, Loader2, Download, PieChart as PieIcon } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, 
-  LineChart, Line, CartesianGrid, AreaChart, Area 
+  LineChart, Line, CartesianGrid, AreaChart, Area, PieChart, Pie, Cell, Legend
 } from 'recharts';
 import api from '../../api';
 
@@ -29,7 +29,6 @@ const AdminAnalytics = () => {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   
-  // Default to last 30 days
   const today = new Date();
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(today.getDate() - 30);
@@ -67,16 +66,46 @@ const AdminAnalytics = () => {
     setDates(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const handleExportCSV = () => {
+    if (!data) return;
+
+    // Build CSV for Revenue Trend
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Type,Date/Label,Value,Count\n";
+    
+    data.revenueTrend.forEach(row => {
+      csvContent += `Revenue Trend,${row._id},${row.revenue},${row.orders}\n`;
+    });
+    
+    data.topItems.forEach(row => {
+      csvContent += `Top Item,${row._id},${row.revenue},${row.count}\n`;
+    });
+
+    data.categoryBreakdown.forEach(row => {
+      csvContent += `Category,${row._id},${row.revenue},${row.count}\n`;
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `analytics_export_${dates.startDate}_to_${dates.endDate}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const analytics = data || {
     revenueTrend: [],
     peakHours: [],
-    topItems: []
+    topItems: [],
+    categoryBreakdown: []
   };
 
-  // Calculate summary metrics
   const totalRevenue = analytics.revenueTrend.reduce((sum, day) => sum + day.revenue, 0);
   const totalOrders = analytics.revenueTrend.reduce((sum, day) => sum + day.orders, 0);
   const avgOrderValue = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0;
+
+  const COLORS = ['#6366F1', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
 
   return (
     <div className="space-y-6 pb-12">
@@ -105,8 +134,12 @@ const AdminAnalytics = () => {
               className="text-sm bg-transparent border-none focus:ring-0 text-text-primary cursor-pointer"
             />
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 bg-card-white border border-border-light rounded-lg text-sm font-medium text-text-primary hover:bg-light-bg transition-colors shadow-sm">
-            <Download className="w-4 h-4" /> Export
+          <button 
+            onClick={handleExportCSV}
+            disabled={loading || !data}
+            className="flex items-center gap-2 px-4 py-2 bg-card-white border border-border-light rounded-lg text-sm font-medium text-text-primary hover:bg-light-bg transition-colors shadow-sm disabled:opacity-50"
+          >
+            <Download className="w-4 h-4" /> Export CSV
           </button>
         </div>
       </div>
@@ -178,6 +211,45 @@ const AdminAnalytics = () => {
           </div>
         </div>
 
+        {/* Category Breakdown Chart */}
+        <div className="bg-card-white border border-border-light rounded-xl shadow-sm p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-semibold text-text-primary">Category Breakdown</h3>
+            <div className="text-xs text-text-muted">Revenue by category</div>
+          </div>
+          <div className="h-[300px] w-full">
+            {loading ? (
+              <div className="h-full w-full bg-light-bg animate-pulse rounded"></div>
+            ) : analytics.categoryBreakdown.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={analytics.categoryBreakdown}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="revenue"
+                    nameKey="_id"
+                    label={({_id, percent}) => `${_id} ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {analytics.categoryBreakdown.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => `₹${value.toLocaleString()}`} />
+                  <Legend verticalAlign="bottom" height={36}/>
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-text-muted italic">No data available</div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Peak Hours Chart */}
         <div className="bg-card-white border border-border-light rounded-xl shadow-sm p-6">
           <div className="flex justify-between items-center mb-6">
@@ -206,62 +278,62 @@ const AdminAnalytics = () => {
             )}
           </div>
         </div>
-      </div>
 
-      {/* Top Performing Items */}
-      <div className="bg-card-white border border-border-light rounded-xl shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-border-light flex justify-between items-center">
-          <h3 className="text-lg font-semibold text-text-primary">Top Performing Items</h3>
-          <span className="text-sm text-text-muted">By revenue generated</span>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-light-bg/50 text-text-muted text-xs uppercase tracking-wider">
-              <tr>
-                <th className="px-6 py-4 font-semibold">Item Name</th>
-                <th className="px-6 py-4 font-semibold">Units Sold</th>
-                <th className="px-6 py-4 font-semibold text-right">Revenue</th>
-                <th className="px-6 py-4 font-semibold text-right">Contribution</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-light">
-              {loading ? (
-                [1, 2, 3, 4, 5].map(i => (
-                  <tr key={i}>
-                    <td className="px-6 py-4"><div className="h-4 w-32 bg-light-bg animate-pulse rounded"></div></td>
-                    <td className="px-6 py-4"><div className="h-4 w-12 bg-light-bg animate-pulse rounded"></div></td>
-                    <td className="px-6 py-4"><div className="h-4 w-16 bg-light-bg animate-pulse ml-auto rounded"></div></td>
-                    <td className="px-6 py-4"><div className="h-2 w-full bg-light-bg animate-pulse rounded mt-1"></div></td>
-                  </tr>
-                ))
-              ) : analytics.topItems.length > 0 ? (
-                analytics.topItems.map((item, index) => (
-                  <tr key={index} className="hover:bg-light-bg/30 transition-colors">
-                    <td className="px-6 py-4 text-sm font-medium text-text-primary">{item._id}</td>
-                    <td className="px-6 py-4 text-sm text-text-secondary">{item.count}</td>
-                    <td className="px-6 py-4 text-sm text-text-primary text-right font-semibold">₹{item.revenue.toLocaleString()}</td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-3">
-                        <div className="w-24 bg-light-bg rounded-full h-1.5 hidden sm:block">
-                          <div 
-                            className="bg-primary h-1.5 rounded-full" 
-                            style={{ width: `${Math.min(100, (item.revenue / totalRevenue) * 100 * 5)}%` }}
-                          ></div>
-                        </div>
-                        <span className="text-xs text-text-muted w-10">
-                          {totalRevenue > 0 ? Math.round((item.revenue / totalRevenue) * 100) : 0}%
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
+        {/* Top Performing Items Table */}
+        <div className="bg-card-white border border-border-light rounded-xl shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-border-light flex justify-between items-center">
+            <h3 className="text-lg font-semibold text-text-primary">Top Performing Items</h3>
+            <span className="text-sm text-text-muted">By revenue generated</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="bg-light-bg/50 text-text-muted text-xs uppercase tracking-wider">
                 <tr>
-                  <td colSpan="4" className="px-6 py-12 text-center text-text-muted italic">No sales recorded for this period</td>
+                  <th className="px-6 py-4 font-semibold">Item Name</th>
+                  <th className="px-6 py-4 font-semibold">Units Sold</th>
+                  <th className="px-6 py-4 font-semibold text-right">Revenue</th>
+                  <th className="px-6 py-4 font-semibold text-right">Contribution</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-border-light">
+                {loading ? (
+                  [1, 2, 3, 4, 5].map(i => (
+                    <tr key={i}>
+                      <td className="px-6 py-4"><div className="h-4 w-32 bg-light-bg animate-pulse rounded"></div></td>
+                      <td className="px-6 py-4"><div className="h-4 w-12 bg-light-bg animate-pulse rounded"></div></td>
+                      <td className="px-6 py-4"><div className="h-4 w-16 bg-light-bg animate-pulse ml-auto rounded"></div></td>
+                      <td className="px-6 py-4"><div className="h-2 w-full bg-light-bg animate-pulse rounded mt-1"></div></td>
+                    </tr>
+                  ))
+                ) : analytics.topItems.length > 0 ? (
+                  analytics.topItems.map((item, index) => (
+                    <tr key={index} className="hover:bg-light-bg/30 transition-colors">
+                      <td className="px-6 py-4 text-sm font-medium text-text-primary">{item._id}</td>
+                      <td className="px-6 py-4 text-sm text-text-secondary">{item.count}</td>
+                      <td className="px-6 py-4 text-sm text-text-primary text-right font-semibold">₹{item.revenue.toLocaleString()}</td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-3">
+                          <div className="w-24 bg-light-bg rounded-full h-1.5 hidden sm:block">
+                            <div 
+                              className="bg-primary h-1.5 rounded-full" 
+                              style={{ width: `${Math.min(100, (item.revenue / totalRevenue) * 100 * 5)}%` }}
+                            ></div>
+                          </div>
+                          <span className="text-xs text-text-muted w-10">
+                            {totalRevenue > 0 ? Math.round((item.revenue / totalRevenue) * 100) : 0}%
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="4" className="px-6 py-12 text-center text-text-muted italic">No sales recorded for this period</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
