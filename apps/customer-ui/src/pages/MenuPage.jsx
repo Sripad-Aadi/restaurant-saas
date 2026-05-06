@@ -2,11 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { useCustomer } from '../CustomerContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
+import { ShoppingBag } from 'lucide-react';
 import CartWidget from '../components/CartWidget';
 
 export default function MenuPage() {
   const { storeSlug, cart, addToCart, updateQuantity } = useCustomer();
   const navigate = useNavigate();
+  const [store, setStore] = useState(null);
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [activeCategory, setActiveCategory] = useState(null);
@@ -21,6 +23,7 @@ export default function MenuPage() {
     async function fetchMenu() {
       try {
         const { data } = await api.get(`/menu/${storeSlug}`);
+        setStore(data.data.store);
         const menuArray = data.data.menu || [];
         
         // Transform backend grouped format into flat frontend arrays
@@ -56,21 +59,30 @@ export default function MenuPage() {
   return (
     <div className="flex-1 pb-24 bg-gray-50 flex flex-col">
       {/* Header */}
-      <div className="sticky top-0 z-20 bg-white/80 backdrop-blur-lg shadow-sm border-b border-gray-100">
-        <div className="p-4 flex items-center justify-between">
-            <h1 className="text-xl font-bold text-slate-800 tracking-tight capitalize">Our Menu</h1>
+      <div className="sticky top-0 z-20 bg-white/90 backdrop-blur-md shadow-sm border-b border-gray-100">
+        <div className="p-4 flex items-start justify-between">
+            <div className="flex-1 pr-4">
+              <h1 className="text-2xl font-black text-slate-800 tracking-tight">{store?.name || 'Our Menu'}</h1>
+              {store?.description && <p className="text-xs text-slate-500 font-medium mt-1 line-clamp-1">{store.description}</p>}
+            </div>
+            <button 
+              onClick={() => navigate('/orders')}
+              className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-black shadow-lg shadow-slate-200 flex items-center gap-2 active:scale-95 transition-all"
+            >
+              <ShoppingBag className="w-3.5 h-3.5" /> MY ORDERS
+            </button>
         </div>
         
         {/* Categories Tab */}
-        <div className="flex overflow-x-auto hide-scrollbar px-4 pb-2 space-x-3">
+        <div className="flex overflow-x-auto hide-scrollbar px-4 pb-3 space-x-3">
           {categories.map((cat) => (
             <button
               key={cat._id}
               onClick={() => setActiveCategory(cat._id)}
-              className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+              className={`whitespace-nowrap px-5 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${
                 activeCategory === cat._id
-                  ? 'bg-slate-900 text-white shadow-md transform scale-[1.02]'
-                  : 'bg-white text-slate-500 hover:bg-slate-100 border border-slate-200'
+                  ? 'bg-primary text-white shadow-lg shadow-primary/30 transform scale-[1.02]'
+                  : 'bg-white text-slate-400 hover:bg-slate-50 border border-slate-200'
               }`}
             >
               {cat.name}

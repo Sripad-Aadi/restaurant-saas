@@ -9,7 +9,7 @@ const registerAdminNamespace = (io) => {
   // Custom middleware to ensure only admins can connect to this namespace
   adminNsp.use((socket, next) => {
     try {
-      roleGuard(socket, ['ADMIN', 'SUPER_ADMIN']);
+      roleGuard(socket, ['admin', 'superadmin']);
       next();
     } catch (err) {
       next(err);

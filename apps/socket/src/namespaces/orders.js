@@ -15,10 +15,10 @@ const registerOrdersNamespace = (io) => {
     // They receive ALL order events for their store
     socket.on('join:store', (storeId) => {
       try {
-        roleGuard(socket, ['ADMIN', 'SUPER_ADMIN']);
+        roleGuard(socket, ['admin', 'superadmin']);
 
         // Ensure admin only joins their own store room
-        if (user.role === 'ADMIN' && user.storeId?.toString() !== storeId) {
+        if (user.role === 'admin' && user.storeId?.toString() !== storeId) {
           socket.emit('error', { message: 'Cannot join another store room' });
           return;
         }

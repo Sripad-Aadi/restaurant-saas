@@ -11,9 +11,9 @@ const registerAnalyticsNamespace = (io) => {
 
     socket.on('join:analytics', (storeId) => {
       try {
-        roleGuard(socket, ['ADMIN', 'SUPER_ADMIN']);
+        roleGuard(socket, ['admin', 'superadmin']);
 
-        if (user.role === 'ADMIN' && user.storeId?.toString() !== storeId) {
+        if (user.role === 'admin' && user.storeId?.toString() !== storeId) {
           socket.emit('error', { message: 'Cannot join another store analytics room' });
           return;
         }

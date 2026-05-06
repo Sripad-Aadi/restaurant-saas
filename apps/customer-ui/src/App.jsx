@@ -6,6 +6,7 @@ import LandingPage from './pages/LandingPage';
 import MenuPage from './pages/MenuPage';
 import CheckoutPage from './pages/CheckoutPage';
 import OrderTrackingPage from './pages/OrderTrackingPage';
+import CustomerOrdersPage from './pages/CustomerOrdersPage';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
             
             {/* Main customer flows */}
             <Route path="/menu" element={<MenuPage />} />
+            <Route path="/orders" element={<CustomerOrdersPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/order/:orderId" element={<OrderTrackingPage />} />
             

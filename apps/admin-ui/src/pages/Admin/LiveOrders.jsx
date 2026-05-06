@@ -5,7 +5,7 @@ import {
   Printer, Bell, AlertCircle
 } from 'lucide-react';
 import StatusBadge from '../../components/StatusBadge';
-import api from '../../api';
+import api, { getAccessToken } from '../../api';
 import { createSocketConnection } from '../../socket';
 import { SOCKET_EVENTS, ORDER_STATUSES, ALLOWED_TRANSITIONS } from '@restaurant-saas/shared';
 import { useAuth } from '../../AuthContext';
@@ -22,65 +22,100 @@ const LiveOrders = () => {
   
   const tabs = ['Active', 'PENDING', 'CONFIRMED', 'PREPARING', 'READY', 'COMPLETED', 'CANCELLED'];
 
-  const fetchOrders = async () => {
-    setLoading(true);
+  const [isConnected, setIsConnected] = useState(false);
+
+  const fetchOrders = async (isInitial = false) => {
+    if (isInitial) setLoading(true);
     try {
       const response = await api.get('/orders', {
-        params: { limit: 100 } // Get more for the live dashboard
+        params: { limit: 100 }
       });
       setOrders(response.data.data);
+      setError('');
     } catch (err) {
+      console.error('Failed to fetch orders:', err);
       setError('Failed to fetch orders');
     } finally {
-      setLoading(false);
+      if (isInitial) setLoading(false);
     }
   };
 
+  // Stable socket connection effect
   useEffect(() => {
-    fetchOrders();
+    if (!user?.storeId) return;
 
-    if (user?.storeId) {
-      const token = localStorage.getItem('token');
-      // Updated to /admin namespace as per Phase 4.2
-      socketRef.current = createSocketConnection('/admin', token);
+    const token = getAccessToken();
+    const socket = createSocketConnection('/admin', token);
+    
+    // Force websocket transport for speed and reliability
+    socket.io.opts.transports = ['websocket'];
+    
+    socketRef.current = socket;
+
+    socket.on('connect', () => {
+      console.log('✅ [Socket] Connected to admin namespace');
+      setIsConnected(true);
+    });
+
+    socket.on('disconnect', () => {
+      console.log('❌ [Socket] Disconnected');
+      setIsConnected(false);
+    });
+
+    socket.on('connect_error', (err) => {
+      console.error('⚠️ [Socket] Connection Error:', err.message);
+      setIsConnected(false);
+    });
+
+    socket.on(SOCKET_EVENTS.ORDER_NEW, (newOrder) => {
+      console.log('🔔 [Socket] New order received:', newOrder.orderNumber || newOrder._id);
       
-      socketRef.current.on('connect', () => {
-        console.log('Connected to admin socket');
-        // Joining store room is handled automatically in our admin namespace implementation,
-        // but let's keep it explicit if needed or just listen
+      // Update orders list instantly
+      setOrders(prev => {
+        if (prev.some(o => o._id === newOrder._id)) return prev;
+        return [newOrder, ...prev];
       });
 
-      socketRef.current.on(SOCKET_EVENTS.ORDER_NEW, (newOrder) => {
-        console.log('[Socket] New order received:', newOrder.orderNumber);
-        setOrders(prev => [newOrder, ...prev]);
-        new Audio('/notification.mp3').play().catch(() => {});
-      });
+      const audio = new Audio('/notification.mp3');
+      audio.play().catch(e => console.warn('Audio play blocked:', e.message));
+      
+      showToast('success', `New Order: ${newOrder.orderNumber}`);
+    });
 
-      socketRef.current.on(SOCKET_EVENTS.ORDER_STATUS_CHANGED, (data) => {
-        console.log('[Socket] Order update received:', data);
-        setOrders(prev => prev.map(order => 
-          order._id === data.orderId ? { 
-            ...order, 
-            status: data.status || order.status, 
-            paymentStatus: data.paymentStatus || order.paymentStatus 
-          } : order
-        ));
-        
-        if (selectedOrder?._id === data.orderId) {
-          setSelectedOrder(prev => prev ? { 
+    socket.on(SOCKET_EVENTS.ORDER_STATUS_CHANGED, (data) => {
+      console.log('🔄 [Socket] Order update received:', data);
+      
+      setOrders(prev => prev.map(order => 
+        order._id === data.orderId ? { 
+          ...order, 
+          status: data.status || order.status, 
+          paymentStatus: data.paymentStatus || order.paymentStatus 
+        } : order
+      ));
+      
+      setSelectedOrder(prev => {
+        if (prev?._id === data.orderId) {
+          return { 
             ...prev, 
             status: data.status || prev.status,
             paymentStatus: data.paymentStatus || prev.paymentStatus
-          } : null);
+          };
         }
+        return prev;
       });
+    });
 
-      socketRef.current.connect();
-    }
+    socket.connect();
 
     return () => {
-      if (socketRef.current) socketRef.current.disconnect();
+      console.log('🔌 [Socket] Disconnecting admin socket');
+      socket.disconnect();
     };
+  }, [user?.storeId]);
+
+  // Initial data fetch
+  useEffect(() => {
+    fetchOrders(true);
   }, [user?.storeId]);
 
   const [toast, setToast] = useState(null); // { type, message }
@@ -91,18 +126,19 @@ const LiveOrders = () => {
   };
 
   const handleStatusUpdate = async (orderId, newStatus) => {
-    // Optimistic update for snappiness
-    const previousOrders = [...orders];
+    // Close sidebar immediately for smoother UX
+    setSelectedOrder(null);
+    
+    // Optimistic update
     setOrders(prev => prev.map(o => o._id === orderId ? { ...o, status: newStatus } : o));
     
     try {
       await api.patch(`/orders/${orderId}/status`, { status: newStatus });
-      setSelectedOrder(null);
-      showToast('success', `Order status updated to ${newStatus}`);
+      showToast('success', `Status updated to ${newStatus}`);
     } catch (err) {
-      // Rollback on failure
-      setOrders(previousOrders);
-      showToast('error', err.response?.data?.message || 'Failed to update status');
+      // Re-fetch to sync with server on error
+      fetchOrders();
+      showToast('error', err.response?.data?.message || 'Update failed');
     }
   };
 
@@ -209,9 +245,13 @@ const LiveOrders = () => {
               className="w-full pl-10 pr-4 py-2 bg-card-white border border-border-light rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all shadow-sm"
             />
           </div>
-          <div className="flex items-center gap-2 bg-success/10 text-success px-4 py-2 rounded-xl text-sm font-bold border border-success/20 shadow-sm">
-            <Wifi className="w-4 h-4 animate-pulse" />
-            LIVE
+          <div className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold border shadow-sm transition-colors ${
+            isConnected 
+              ? 'bg-success/10 text-success border-success/20' 
+              : 'bg-error/10 text-error border-error/20'
+          }`}>
+            <Wifi className={`w-4 h-4 ${isConnected ? 'animate-pulse' : ''}`} />
+            {isConnected ? 'LIVE' : 'DISCONNECTED'}
           </div>
         </div>
       </div>

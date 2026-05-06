@@ -12,9 +12,9 @@ const registerTablesNamespace = (io) => {
     // Admins join their store room to receive live table status updates
     socket.on('join:store', (storeId) => {
       try {
-        roleGuard(socket, ['ADMIN', 'SUPER_ADMIN']);
+        roleGuard(socket, ['admin', 'superadmin']);
 
-        if (user.role === 'ADMIN' && user.storeId?.toString() !== storeId) {
+        if (user.role === 'admin' && user.storeId?.toString() !== storeId) {
           socket.emit('error', { message: 'Cannot join another store room' });
           return;
         }

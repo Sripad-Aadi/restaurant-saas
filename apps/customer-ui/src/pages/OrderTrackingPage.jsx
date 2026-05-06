@@ -178,7 +178,17 @@ export default function OrderTrackingPage() {
 
       {/* Payment Banner / Status Banner */}
       <div className="px-6 pb-8">
-        {!isPaid ? (
+        {isCancelled ? (
+          <div className="bg-red-50 border border-red-100 rounded-3xl p-6 flex items-center gap-4">
+            <div className="w-12 h-12 bg-red-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-red-200">
+              <AlertCircle className="w-6 h-6 stroke-[3]" />
+            </div>
+            <div>
+              <h2 className="text-red-800 font-black text-lg">Order Rejected</h2>
+              <p className="text-red-600 text-sm font-bold">Please contact staff for assistance.</p>
+            </div>
+          </div>
+        ) : !isPaid ? (
           <div className="bg-orange-50 border border-orange-100 rounded-3xl p-6">
             <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 bg-orange-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-orange-200">
