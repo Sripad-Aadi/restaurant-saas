@@ -137,11 +137,11 @@ const handlePaymentCaptured = async (paymentEntity) => {
     );
 
     // Emit to admin and customer
-    await emitToRoom('/orders', `store:${orderDoc.storeId}`, SOCKET_EVENTS.ORDER_CONFIRMED, {
+    await emitToRoom('/admin', `store:${orderDoc.storeId}`, SOCKET_EVENTS.ORDER_STATUS_CHANGED, {
       orderId:  orderDoc._id,
       status:   'CONFIRMED',
     });
-    await emitToRoom('/orders', `order:${orderDoc._id}`, SOCKET_EVENTS.ORDER_CONFIRMED, {
+    await emitToRoom('/customer', `order:${orderDoc._id}`, SOCKET_EVENTS.ORDER_STATUS_CHANGED, {
       orderId:  orderDoc._id,
       status:   'CONFIRMED',
     });

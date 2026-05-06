@@ -1,9 +1,15 @@
 export const SOCKET_EVENTS = {
+  // Admin events
   ORDER_NEW:            'order:new',
-  ORDER_CONFIRMED:      'order:confirmed',
-  ORDER_STATUS_UPDATED: 'order:status_updated',
-  ORDER_CANCELLED:      'order:cancelled',
-  ORDER_SYNC:           'order:sync',
+  ORDER_STATUS_CHANGED: 'order:status_changed',
+  TABLE_OCCUPIED:       'table:occupied',
+  TABLE_FREED:          'table:freed',
   ANALYTICS_UPDATE:     'analytics:update',
-  TABLE_STATUS_UPDATED: 'table:status_updated',
+  
+  // Customer events
+  ORDER_READY:          'order:ready',
+  ORDER_CANCELLED:      'order:cancelled',
+  
+  // Legacy / Other (if needed, but keeping it clean for now)
+  TABLE_STATUS_UPDATED: 'table:status_updated', // keeping for compatibility until updated
 };

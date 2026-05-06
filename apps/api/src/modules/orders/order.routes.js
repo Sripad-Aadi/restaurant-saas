@@ -13,10 +13,15 @@ router.use(isAuthenticated, tenant);
 // POST /api/orders — customer creates an order
 router.post('/', requirePermission('order_create'), validate(createOrderSchema), async (req, res) => {
   try {
+    const idempotencyKey = req.headers['x-idempotency-key'] || req.body.idempotencyKey;
+    if (!idempotencyKey) {
+      return res.status(400).json({ success: false, message: 'Idempotency key is required (header: X-Idempotency-Key or body: idempotencyKey)' });
+    }
+
     const { order, isDuplicate } = await orderService.createOrder(
       req.tenant.storeId,
       req.user.userId,
-      req.body
+      { ...req.body, idempotencyKey }
     );
 
     res.status(isDuplicate ? 200 : 201).json({
@@ -32,12 +37,16 @@ router.post('/', requirePermission('order_create'), validate(createOrderSchema),
 // GET /api/orders — admin gets all orders for their store
 router.get('/', requirePermission('order_read_all'), async (req, res) => {
   try {
-    const { status, limit } = req.query;
-    const orders = await orderService.getOrdersByStore(
+    const { status, limit, page } = req.query;
+    const { orders, pagination } = await orderService.getOrdersByStore(
       req.tenant.storeId,
-      { status, limit: limit ? parseInt(limit) : 50 }
+      { 
+        status, 
+        limit: limit ? parseInt(limit) : 50,
+        page: page ? parseInt(page) : 1
+      }
     );
-    res.json({ success: true, data: orders });
+    res.json({ success: true, data: orders, pagination });
   } catch (err) {
     res.status(err.status || 500).json({ success: false, message: err.message });
   }

@@ -5,10 +5,8 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
 import { pubClient, subClient } from './config/redis.js';
-import socketAuth from './middleware/socketAuth.js';
-import registerOrdersNamespace from './namespaces/orders.js';
-import registerAnalyticsNamespace from './namespaces/analytics.js';
-import registerTablesNamespace from './namespaces/tables.js';
+import registerAdminNamespace from './namespaces/admin.js';
+import registerCustomerNamespace from './namespaces/customer.js';
 
 const httpServer = createServer();
 
@@ -26,11 +24,10 @@ const io = new Server(httpServer, {
 });
 
 io.adapter(createAdapter(pubClient, subClient));
-io.use(socketAuth);
 
-const ordersNsp    = registerOrdersNamespace(io);
-const analyticsNsp = registerAnalyticsNamespace(io);
-const tablesNsp    = registerTablesNamespace(io);
+// Register Namespaces
+const adminNsp    = registerAdminNamespace(io);
+const customerNsp = registerCustomerNamespace(io);
 
 // ── Listen for events published by the API ───────────────────
 const subscriber = subClient.duplicate();
@@ -44,12 +41,13 @@ subscriber.on('message', (channel, message) => {
   try {
     const { namespace, room, event, data } = JSON.parse(message);
 
-    if (namespace === '/orders') {
-      ordersNsp.to(room).emit(event, data);
-    } else if (namespace === '/analytics') {
-      analyticsNsp.to(room).emit(event, data);
-    } else if (namespace === '/tables') {
-      tablesNsp.to(room).emit(event, data);
+    if (namespace === '/admin') {
+      adminNsp.to(room).emit(event, data);
+    } else if (namespace === '/customer') {
+      customerNsp.to(room).emit(event, data);
+    } else {
+      // Fallback for legacy namespaces during transition if needed
+      io.of(namespace).to(room).emit(event, data);
     }
   } catch (err) {
     console.error('Failed to process socket:emit message:', err.message);

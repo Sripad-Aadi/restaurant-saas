@@ -59,7 +59,7 @@ export const createOrder = async (storeId, customerId, { tableId, idempotencyKey
   });
 
   // Notify admin dashboard of new order
-  await emitToRoom('/orders', `store:${storeId}`, SOCKET_EVENTS.ORDER_NEW, {
+  await emitToRoom('/admin', `store:${storeId}`, SOCKET_EVENTS.ORDER_NEW, {
     orderId:     order._id,
     orderNumber: order.orderNumber,
     tableId:     order.tableId,
@@ -71,7 +71,7 @@ export const createOrder = async (storeId, customerId, { tableId, idempotencyKey
   // Update table status if applicable
   if (tableId) {
     await Table.findByIdAndUpdate(tableId, { isOccupied: true });
-    await emitToRoom('/tables', `store:${storeId}`, SOCKET_EVENTS.TABLE_STATUS_UPDATED, {
+    await emitToRoom('/admin', `store:${storeId}`, SOCKET_EVENTS.TABLE_OCCUPIED, {
       tableId,
       isOccupied: true
     });
@@ -87,13 +87,29 @@ export const getOrderById = async (storeId, orderId) => {
   return order.toObject();
 };
 
-export const getOrdersByStore = async (storeId, filters = {}) => {
+export const getOrdersByStore = async (storeId, { status, page = 1, limit = 50 } = {}) => {
   const query = { storeId };
-  if (filters.status) query.status = filters.status;
+  if (status) query.status = status;
 
-  return Order.find(query)
-    .sort({ createdAt: -1 })
-    .limit(filters.limit || 50);
+  const skip = (page - 1) * limit;
+
+  const [orders, total] = await Promise.all([
+    Order.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
+    Order.countDocuments(query)
+  ]);
+
+  return {
+    orders,
+    pagination: {
+      total,
+      page,
+      limit,
+      pages: Math.ceil(total / limit)
+    }
+  };
 };
 
 export const getCustomerOrders = async (storeId, customerId) => {
@@ -110,14 +126,18 @@ export const updateOrderStatus = async (storeId, orderId, newStatus) => {
   await order.save();
 
   // Notify customer tracking page
-  await emitToRoom('/orders', `order:${orderId}`, SOCKET_EVENTS.ORDER_STATUS_UPDATED, {
+  let customerEvent = SOCKET_EVENTS.ORDER_STATUS_CHANGED;
+  if (newStatus === 'READY') customerEvent = SOCKET_EVENTS.ORDER_READY;
+  if (newStatus === 'CANCELLED') customerEvent = SOCKET_EVENTS.ORDER_CANCELLED;
+
+  await emitToRoom('/customer', `order:${orderId}`, customerEvent, {
     orderId,
     status:    newStatus,
     updatedAt: new Date(),
   });
 
   // Notify admin dashboard
-  await emitToRoom('/orders', `store:${storeId}`, SOCKET_EVENTS.ORDER_STATUS_UPDATED, {
+  await emitToRoom('/admin', `store:${storeId}`, SOCKET_EVENTS.ORDER_STATUS_CHANGED, {
     orderId,
     status:    newStatus,
     updatedAt: new Date(),
@@ -125,10 +145,10 @@ export const updateOrderStatus = async (storeId, orderId, newStatus) => {
 
   // If completed, update analytics
   if (newStatus === 'COMPLETED') {
-    await emitToRoom('/analytics', `analytics:${storeId}`, SOCKET_EVENTS.ANALYTICS_UPDATE, {
+    await emitToRoom('/admin', `store:${storeId}`, SOCKET_EVENTS.ANALYTICS_UPDATE, {
       type:        'ORDER_COMPLETED',
       orderId,
-      totalAmount: order.totalAmount,
+      totalAmount: order.total,
       updatedAt:   new Date(),
     });
   }
@@ -145,7 +165,7 @@ export const updateOrderStatus = async (storeId, orderId, newStatus) => {
 
     if (activeOrdersCount === 0) {
       await Table.findByIdAndUpdate(order.tableId, { isOccupied: false });
-      await emitToRoom('/tables', `store:${storeId}`, SOCKET_EVENTS.TABLE_STATUS_UPDATED, {
+      await emitToRoom('/admin', `store:${storeId}`, SOCKET_EVENTS.TABLE_FREED, {
         tableId: order.tableId,
         isOccupied: false
       });
