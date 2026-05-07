@@ -8,16 +8,32 @@ import {
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import DataTable from '../../components/DataTable';
 import StatusBadge from '../../components/StatusBadge';
-import api from '../../api';
+import api, { setAccessToken } from '../../api';
+import { useAuth } from '../../AuthContext';
+import ConfirmationModal from '../../components/ConfirmationModal';
 
 const RestaurantDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { setUser } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [store, setStore] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tabData, setTabData] = useState({ orders: [], products: [], analytics: [], settings: {} });
   const [tabLoading, setTabLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  
+  // Modal State
+  const [modalConfig, setModalConfig] = useState({ isOpen: false });
+
+  // Settings Form State
+  const [settingsForm, setSettingsForm] = useState({
+    name: '',
+    cuisineType: '',
+    avgWaitTime: '',
+    description: '',
+    timezone: ''
+  });
 
   useEffect(() => {
     fetchStore();
@@ -32,7 +48,15 @@ const RestaurantDetail = () => {
   const fetchStore = async () => {
     try {
       const response = await api.get(`/stores/${id}`);
-      setStore(response.data.data);
+      const data = response.data.data;
+      setStore(data);
+      setSettingsForm({
+        name: data.name || '',
+        cuisineType: data.cuisineType || '',
+        avgWaitTime: data.avgWaitTime || '',
+        description: data.description || '',
+        timezone: data.timezone || 'Asia/Kolkata'
+      });
     } catch (err) {
       console.error('Failed to fetch store', err);
     } finally {
@@ -63,21 +87,56 @@ const RestaurantDetail = () => {
 
   const handleUpdateStore = async (e) => {
     e.preventDefault();
-    // Implementation for updating store settings
-    alert('Store update logic goes here');
+    setSubmitting(true);
+    try {
+      await api.patch(`/stores/${id}`, settingsForm);
+      await fetchStore();
+      alert('Store details updated successfully!');
+    } catch (err) {
+      alert('Failed to update store: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const handleResetPassword = async () => {
-    const newPass = prompt('Enter new temporary password (min 6 chars):');
-    if (newPass && newPass.length >= 6) {
+  const toggleStatus = async () => {
+    if (store.isActive) {
+      setModalConfig({ isOpen: true });
+    } else {
       try {
-        await api.post(`/stores/${id}/reset-password`, { password: newPass });
-        alert('Admin password has been reset successfully.');
+        await api.patch(`/stores/${id}/activate`);
+        fetchStore();
       } catch (err) {
-        alert('Failed to reset password: ' + (err.response?.data?.message || err.message));
+        console.error(err);
       }
     }
   };
+
+  const confirmDeactivation = async () => {
+    try {
+      await api.patch(`/stores/${id}/deactivate`);
+      setModalConfig({ isOpen: false });
+      fetchStore();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleImpersonate = async () => {
+    try {
+      const response = await api.post('/auth/impersonate', { storeId: id });
+      if (response.data.success) {
+        setAccessToken(response.data.accessToken);
+        setUser(response.data.user);
+        navigate('/admin/dashboard');
+      }
+    } catch (err) {
+      console.error('Impersonation failed:', err);
+      alert('Impersonation failed');
+    }
+  };
+
+
 
   if (loading) return <div className="h-full flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-primary" /></div>;
   if (!store) return <div className="p-8 text-center">Store not found</div>;
@@ -116,7 +175,22 @@ const RestaurantDetail = () => {
           </div>
           
           <div className="flex gap-3">
-             {/* Action buttons removed as per request */}
+             <button 
+               onClick={handleImpersonate}
+               className="flex items-center gap-2 px-4 py-2.5 bg-primary/10 text-primary rounded-xl text-sm font-bold hover:bg-primary/20 transition-all active:scale-95"
+             >
+               <ExternalLink className="w-4 h-4" /> Impersonate
+             </button>
+             <button 
+               onClick={toggleStatus}
+               className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 ${
+                 store.isActive 
+                   ? 'bg-error/10 text-error hover:bg-error/20' 
+                   : 'bg-success/10 text-success hover:bg-success/20'
+               }`}
+             >
+               {store.isActive ? 'Deactivate Store' : 'Activate Store'}
+             </button>
           </div>
         </div>
       </div>
@@ -158,21 +232,24 @@ const RestaurantDetail = () => {
                       <div className="grid grid-cols-3 gap-4">
                          <div className="bg-card-white p-4 rounded-xl border border-border-light shadow-sm">
                             <p className="text-xs text-text-secondary mb-1 font-bold uppercase tracking-wider">Total Orders</p>
-                            <p className="text-2xl font-black text-text-primary">1,284</p>
-                            <p className="text-xs text-success mt-1 flex items-center gap-1 font-bold">
-                               <ArrowUpRight className="w-3 h-3" /> +12%
+                            <p className="text-2xl font-black text-text-primary">{store.orderCount || 0}</p>
+                            <p className="text-xs text-text-muted mt-1 flex items-center gap-1 font-medium">
+                               Lifetime volume
                             </p>
                          </div>
                          <div className="bg-card-white p-4 rounded-xl border border-border-light shadow-sm">
                             <p className="text-xs text-text-secondary mb-1 font-bold uppercase tracking-wider">Gross Revenue</p>
-                            <p className="text-2xl font-black text-text-primary">₹{(42500 / 100).toLocaleString()}</p>
-                            <p className="text-xs text-success mt-1 flex items-center gap-1 font-bold">
-                               <ArrowUpRight className="w-3 h-3" /> +8.4%
+                            <p className="text-2xl font-black text-text-primary">₹{( (store.totalRevenue || 0) / 100).toLocaleString()}</p>
+                            <p className="text-xs text-text-muted mt-1 flex items-center gap-1 font-medium">
+                               Settled payments
                             </p>
                          </div>
                          <div className="bg-card-white p-4 rounded-xl border border-border-light shadow-sm">
-                            <p className="text-xs text-text-secondary mb-1 font-bold uppercase tracking-wider">Active Menu Items</p>
-                            <p className="text-2xl font-black text-text-primary">24</p>
+                            <p className="text-xs text-text-secondary mb-1 font-bold uppercase tracking-wider">Menu Items</p>
+                            <p className="text-2xl font-black text-text-primary">{store.productCount || 0}</p>
+                            <p className="text-xs text-text-muted mt-1 flex items-center gap-1 font-medium">
+                               Active products
+                            </p>
                          </div>
                       </div>
                    </div>
@@ -289,41 +366,77 @@ const RestaurantDetail = () => {
 
           {activeTab === 'settings' && (
             <div className="max-w-2xl">
-               <form onSubmit={handleUpdateStore} className="space-y-6 mb-12">
-                  <h3 className="text-lg font-bold text-text-primary mb-4">Edit Store Information</h3>
-                  <div className="grid grid-cols-2 gap-6">
-                     <div className="col-span-2">
-                        <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Restaurant Name</label>
-                        <input type="text" defaultValue={store.name} className="w-full p-3 border border-border-light rounded-xl focus:border-primary outline-none" />
-                     </div>
-                     <div>
-                        <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Cuisine Type</label>
-                        <input type="text" defaultValue={store.cuisineType} className="w-full p-3 border border-border-light rounded-xl focus:border-primary outline-none" />
-                     </div>
-                     <div>
-                        <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Avg Wait Time</label>
-                        <input type="text" defaultValue={store.avgWaitTime} className="w-full p-3 border border-border-light rounded-xl focus:border-primary outline-none" />
-                     </div>
-                  </div>
-                  <button type="submit" className="px-6 py-2.5 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all">Update Store</button>
-               </form>
+                <form onSubmit={handleUpdateStore} className="space-y-6 mb-12">
+                   <h3 className="text-lg font-bold text-text-primary mb-4">Edit Store Information</h3>
+                   <div className="grid grid-cols-2 gap-6">
+                      <div className="col-span-2">
+                         <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Restaurant Name</label>
+                         <input 
+                           type="text" value={settingsForm.name} 
+                           onChange={(e) => setSettingsForm({...settingsForm, name: e.target.value})}
+                           className="w-full p-3 border border-border-light rounded-xl focus:border-primary outline-none" 
+                         />
+                      </div>
+                      <div>
+                         <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Cuisine Type</label>
+                         <input 
+                           type="text" value={settingsForm.cuisineType} 
+                           onChange={(e) => setSettingsForm({...settingsForm, cuisineType: e.target.value})}
+                           className="w-full p-3 border border-border-light rounded-xl focus:border-primary outline-none" 
+                         />
+                      </div>
+                      <div>
+                         <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Avg Wait Time</label>
+                         <input 
+                           type="text" value={settingsForm.avgWaitTime} 
+                           onChange={(e) => setSettingsForm({...settingsForm, avgWaitTime: e.target.value})}
+                           className="w-full p-3 border border-border-light rounded-xl focus:border-primary outline-none" 
+                         />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Short Description</label>
+                        <textarea 
+                          rows="3" value={settingsForm.description}
+                          onChange={(e) => setSettingsForm({...settingsForm, description: e.target.value})}
+                          className="w-full p-3 border border-border-light rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-none text-sm" 
+                          placeholder="A brief overview of the restaurant..." 
+                        />
+                      </div>
+                   </div>
+                   <button 
+                     type="submit" disabled={submitting}
+                     className="px-6 py-2.5 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all disabled:opacity-50"
+                   >
+                     {submitting ? 'Updating...' : 'Update Store'}
+                   </button>
+                </form>
 
                <div className="pt-8 border-t border-border-light">
-                  <h3 className="text-lg font-bold text-error mb-4 flex items-center gap-2">
-                    <ShieldAlert className="w-5 h-5" /> Danger Zone
+                  <h3 className="text-lg font-bold text-text-primary mb-4 flex items-center gap-2">
+                    <ShieldAlert className="w-5 h-5 text-primary" /> User Access
                   </h3>
-                  <div className="bg-error/5 border border-error/20 p-6 rounded-2xl flex justify-between items-center">
+                  <div className="bg-light-bg/5 border border-border-light p-6 rounded-2xl flex justify-between items-center">
                      <div>
-                        <p className="font-bold text-text-primary">Reset Admin Password</p>
-                        <p className="text-sm text-text-secondary">Reset the primary administrator's password for this restaurant.</p>
+                        <p className="font-bold text-text-primary">Manage Store Admin</p>
+                        <p className="text-sm text-text-secondary">Password resets and session management are handled in the Platform Users section.</p>
                      </div>
-                     <button onClick={handleResetPassword} className="px-6 py-2.5 bg-error text-white rounded-xl font-bold hover:bg-error/90 transition-all">Reset Password</button>
+                     <button onClick={() => navigate('/superadmin/users')} className="px-6 py-2.5 bg-card-white border border-border-light rounded-xl font-bold hover:bg-white transition-all shadow-sm">Go to Users</button>
                   </div>
                </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* Deactivation Confirmation Modal */}
+      <ConfirmationModal 
+        isOpen={modalConfig.isOpen}
+        onClose={() => setModalConfig({ isOpen: false })}
+        onConfirm={confirmDeactivation}
+        title="Deactivate Restaurant"
+        message="Are you sure you want to deactivate this restaurant? All associated admin and customer access will be suspended immediately."
+        confirmText="Yes, Deactivate"
+      />
     </div>
   );
 };

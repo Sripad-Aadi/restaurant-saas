@@ -1,7 +1,8 @@
 import User from '../../models/User.js';
+import { ROLES } from '@restaurant-saas/shared';
 
 export const getAllUsers = async (filters = {}) => {
-  const query = {};
+  const query = { role: { $ne: ROLES.SUPER_ADMIN } };
   if (filters.role) query.role = filters.role;
   if (filters.search) {
     query.$or = [
@@ -68,4 +69,16 @@ export const updateUser = async (userId, userData) => {
 
   await user.save();
   return user;
+};
+
+export const getUserById = async (userId) => {
+  const user = await User.findById(userId).populate('storeId', 'name slug');
+  if (!user) throw new Error('User not found');
+  return user;
+};
+
+export const deleteUser = async (userId) => {
+  const user = await User.findByIdAndDelete(userId);
+  if (!user) throw new Error('User not found');
+  return true;
 };

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../AuthContext';
+import { useConfig } from '../../ConfigContext';
 import { ROLES } from '@restaurant-saas/shared';
 
 const Login = () => {
@@ -10,6 +11,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { config } = useConfig();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -43,8 +45,8 @@ const Login = () => {
       <div className="relative w-full max-w-[440px] bg-card-white rounded-xl shadow-2xl overflow-hidden">
         <div className="p-8">
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-text-primary tracking-tight">RestaurantOS</h1>
-            <p className="text-text-muted mt-2">Sign in to your account</p>
+            <h1 className="text-3xl font-black text-primary tracking-tighter">{config.platformName}</h1>
+            <p className="text-text-muted mt-2 font-medium">Sign in to your account</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-5">

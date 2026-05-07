@@ -3,30 +3,30 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Store, CreditCard, BarChart2, Shield, Settings, Users } from 'lucide-react';
 import SidebarLink from '../components/SidebarLink';
 import TopHeader from '../components/TopHeader';
+import { useConfig } from '../ConfigContext';
 
 const SuperAdminLayout = () => {
   const location = useLocation();
+  const { config } = useConfig();
 
   const getBreadcrumb = () => {
     const path = location.pathname;
-    if (path.includes('dashboard')) return 'Platform Overview';
+    if (path.includes('dashboard')) return 'Dashboard';
     if (path.includes('restaurants')) return 'Restaurants';
     if (path.includes('subscriptions')) return 'Subscriptions';
     if (path.includes('users')) return 'Users';
     if (path.includes('analytics')) return 'Analytics';
     if (path.includes('settings')) return 'Settings';
-    return 'Super Admin';
+    return 'Dashboard';
   };
 
   return (
     <div className="flex h-screen bg-light-bg overflow-hidden">
       {/* Sidebar */}
       <aside className="w-[240px] bg-dark-bg text-white flex-shrink-0 flex flex-col relative">
-        <div className="h-[64px] flex flex-col justify-center px-6 border-b border-white/10 shrink-0">
-          <h1 className="text-xl font-bold text-white tracking-tight flex items-center justify-between">
-            <span>RestaurantOS</span>
-          </h1>
-          <span className="text-[10px] text-error font-bold uppercase tracking-widest bg-error/20 inline-block px-1.5 py-0.5 rounded w-max mt-1">Super Admin Panel</span>
+        <div className="h-[72px] flex flex-col justify-center px-6 border-b border-white/10 shrink-0 bg-white/[0.02]">
+          <h1 className="text-xl font-black text-white tracking-tighter">{config.platformName}</h1>
+          <span className="text-[9px] text-error font-black uppercase tracking-[0.2em] bg-error/10 border border-error/20 inline-block px-1.5 py-0.5 rounded w-max mt-1">Super Admin Panel</span>
         </div>
         
         <nav className="flex-1 overflow-y-auto py-6 px-3">

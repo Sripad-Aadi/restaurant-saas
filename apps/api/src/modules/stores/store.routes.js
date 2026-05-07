@@ -53,7 +53,7 @@ router.get('/', async (req, res) => {
 // GET /api/stores/:id — get single store
 router.get('/:id', async (req, res) => {
   try {
-    const store = await storeService.getStoreById(req.params.id);
+    const store = await storeService.getStoreById(req.params.id, true);
     res.json({ success: true, data: store });
   } catch (err) {
     res.status(err.status || 500).json({ success: false, message: err.message });
@@ -63,19 +63,17 @@ router.get('/:id', async (req, res) => {
 // POST /api/stores — create store + first admin user
 router.post('/', validate(createStoreSchema), async (req, res) => {
   try {
-    const { name, slug, logo, timezone } = req.body;
-
-    // Admin credentials must be passed in request body
-    const { adminName, adminEmail, adminPassword } = req.body;
-    if (!adminName || !adminEmail || !adminPassword) {
-      return res.status(400).json({
-        success: false,
-        message: 'adminName, adminEmail and adminPassword are required',
-      });
-    }
+    const { 
+      name, slug, logo, coverImage, description, 
+      cuisineType, timezone, avgWaitTime, razorpay,
+      adminName, adminEmail, adminPassword 
+    } = req.body;
 
     const result = await storeService.createStore(
-      { name, slug, logo, timezone },
+      { 
+        name, slug, logo, coverImage, description, 
+        cuisineType, timezone, avgWaitTime, razorpay 
+      },
       { name: adminName, email: adminEmail, password: adminPassword }
     );
 

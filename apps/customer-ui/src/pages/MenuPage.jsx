@@ -2,11 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { useCustomer } from '../CustomerContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
-import { ShoppingBag } from 'lucide-react';
+import { ShoppingBag, Lock } from 'lucide-react';
 import CartWidget from '../components/CartWidget';
+import { useConfig } from '../ConfigContext';
 
 export default function MenuPage() {
   const { storeSlug, cart, addToCart, updateQuantity } = useCustomer();
+  const { config } = useConfig();
   const navigate = useNavigate();
   const [store, setStore] = useState(null);
   const [categories, setCategories] = useState([]);
@@ -154,6 +156,14 @@ export default function MenuPage() {
       </div>
 
       {cartItemCount > 0 && <CartWidget />}
+      
+      {/* Platform Footer */}
+      <div className="mt-8 mb-12 flex flex-col items-center justify-center opacity-40">
+        <div className="flex items-center gap-1.5 text-slate-400 font-black tracking-[0.2em] text-[10px]">
+          <Lock className="w-3 h-3" />
+          <span>POWERED BY {config.platformName}</span>
+        </div>
+      </div>
     </div>
   );
 }

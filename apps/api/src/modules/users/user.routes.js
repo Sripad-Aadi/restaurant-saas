@@ -18,6 +18,15 @@ router.get('/', requirePermission('platform_management'), async (req, res) => {
   }
 });
 
+router.get('/:id', requirePermission('platform_management'), async (req, res) => {
+  try {
+    const user = await userService.getUserById(req.params.id);
+    res.json({ success: true, data: user });
+  } catch (err) {
+    res.status(404).json({ success: false, message: err.message });
+  }
+});
+
 router.post('/:id/logout', requirePermission('platform_management'), async (req, res) => {
   try {
     await userService.forceLogout(req.params.id);

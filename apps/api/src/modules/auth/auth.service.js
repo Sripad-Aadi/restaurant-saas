@@ -57,6 +57,9 @@ export const login = async (email, password) => {
   const accessToken = generateAccessToken(user);
   const refreshToken = await generateRefreshToken(user._id);
 
+  user.lastLogin = new Date();
+  await user.save();
+
   return {
     accessToken,
     refreshToken,
@@ -94,6 +97,9 @@ export const impersonateStoreAdmin = async (storeId) => {
 
   const accessToken = generateAccessToken(user);
   const refreshToken = await generateRefreshToken(user._id);
+
+  user.lastLogin = new Date();
+  await user.save();
 
   return {
     accessToken,

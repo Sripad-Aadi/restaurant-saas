@@ -32,7 +32,13 @@ const KPICard = ({ title, value, subtitle, icon: Icon, color, trend }) => (
 
 const SuperAdminDashboard = () => {
   const [stores, setStores] = useState([]);
-  const [kpis, setKpis] = useState({ totalStores: '-', activeStores: '-', todaysOrders: '-', monthlyRevenue: '-' });
+  const [kpis, setKpis] = useState({ 
+    totalStores: '-', 
+    activeStores: '-', 
+    todaysOrders: '-', 
+    monthlyRevenue: '-',
+    orderVolume: [] 
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const { setUser } = useAuth();
@@ -92,9 +98,9 @@ const SuperAdminDashboard = () => {
     revenue: store.totalRevenue || 0
   }));
 
-  const chartData = [
-    { day: 'Mon', volume: 1200 }, { day: 'Tue', volume: 1540 }, { day: 'Wed', volume: 1420 },
-    { day: 'Thu', volume: 1680 }, { day: 'Fri', volume: 2100 }, { day: 'Sat', volume: 2600 }, { day: 'Sun', volume: 2300 },
+  const chartData = kpis.orderVolume && kpis.orderVolume.length > 0 ? kpis.orderVolume : [
+    { day: 'Mon', volume: 0 }, { day: 'Tue', volume: 0 }, { day: 'Wed', volume: 0 },
+    { day: 'Thu', volume: 0 }, { day: 'Fri', volume: 0 }, { day: 'Sat', volume: 0 }, { day: 'Sun', volume: 0 },
   ];
 
   if (loading) {
@@ -141,25 +147,7 @@ const SuperAdminDashboard = () => {
 
         {/* Right Col - 40% */}
         <div className="xl:w-[40%] space-y-6">
-          {/* Platform Health */}
-          <div className="bg-card-white border border-border-light rounded-xl shadow-sm p-6 grid grid-cols-2 gap-4">
-            <div className="col-span-2">
-              <h3 className="text-lg font-semibold text-text-primary">Platform Health</h3>
-            </div>
-            <div className="bg-light-bg p-4 rounded-lg border border-border-light">
-              <p className="text-xs text-text-secondary mb-1">API Response</p>
-              <div className="flex items-end gap-2">
-                <span className="text-xl font-bold text-success">42ms</span>
-                <span className="text-[10px] text-text-muted mb-1 flex items-center"><Activity className="w-3 h-3 mr-1"/> Avg</span>
-              </div>
-            </div>
-            <div className="bg-light-bg p-4 rounded-lg border border-border-light">
-              <p className="text-xs text-text-secondary mb-1">Active Sockets</p>
-              <div className="flex items-end gap-2">
-                <span className="text-xl font-bold text-primary">1,402</span>
-              </div>
-            </div>
-          </div>
+
 
           {/* Volume Chart */}
           <div className="bg-card-white border border-border-light rounded-xl shadow-sm p-6 flex flex-col">

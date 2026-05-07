@@ -128,7 +128,7 @@ const UserDrawer = ({ isOpen, onClose, user, onSave }) => {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-1">Role</label>
             <select
@@ -139,18 +139,6 @@ const UserDrawer = ({ isOpen, onClose, user, onSave }) => {
               <option value={ROLES.SUPER_ADMIN}>Super Admin</option>
               <option value={ROLES.ADMIN}>Store Admin</option>
               <option value={ROLES.CUSTOMER}>Customer</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">Status</label>
-            <select
-              value={formData.isActive}
-              onChange={(e) => setFormData({ ...formData, isActive: e.target.value === 'true' })}
-              className="w-full px-4 py-2 border border-border-light rounded-lg focus:ring-2 focus:ring-primary/20 outline-none bg-white"
-            >
-              <option value="true">Active</option>
-              <option value="false">Inactive</option>
             </select>
           </div>
         </div>

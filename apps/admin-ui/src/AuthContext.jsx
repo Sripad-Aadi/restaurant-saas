@@ -4,15 +4,21 @@ import api, { setAccessToken } from './api';
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null); // includes role, storeId, etc
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem('rs_user');
+    return saved ? JSON.parse(saved) : null;
+  });
 
   const login = async (email, password) => {
     try {
       const response = await api.post('/auth/login', { email, password });
       if (response.data.success) {
-        setAccessToken(response.data.accessToken);
-        setUser(response.data.user);
-        return response.data.user;
+        const { accessToken, user } = response.data;
+        setAccessToken(accessToken);
+        localStorage.setItem('rs_token', accessToken);
+        localStorage.setItem('rs_user', JSON.stringify(user));
+        setUser(user);
+        return user;
       } else {
         throw new Error(response.data.message || 'Login failed');
       }
@@ -27,6 +33,8 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setUser(null);
     setAccessToken(null);
+    localStorage.removeItem('rs_token');
+    localStorage.removeItem('rs_user');
   };
 
   return (

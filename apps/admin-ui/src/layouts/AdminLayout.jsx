@@ -3,9 +3,12 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { LayoutDashboard, CheckSquare, Settings, BarChart2, Hash, Utensils } from 'lucide-react';
 import SidebarLink from '../components/SidebarLink';
 import TopHeader from '../components/TopHeader';
+import { useConfig } from '../ConfigContext';
+import { Mail, Phone, Info } from 'lucide-react';
 
 const AdminLayout = () => {
   const location = useLocation();
+  const { config } = useConfig();
 
   const getBreadcrumb = () => {
     const path = location.pathname;
@@ -22,9 +25,12 @@ const AdminLayout = () => {
     <div className="flex h-screen bg-light-bg overflow-hidden">
       {/* Sidebar */}
       <aside className="w-[240px] bg-dark-bg text-white flex-shrink-0 flex flex-col">
-        <div className="h-[64px] flex flex-col justify-center px-6 border-b border-white/10 shrink-0">
-          <h1 className="text-xl font-bold text-white tracking-tight">RestaurantOS</h1>
-          <span className="text-xs text-text-muted font-mono uppercase tracking-wider">Admin Dashboard</span>
+        <div className="h-[72px] flex flex-col justify-center px-6 border-b border-white/10 shrink-0 bg-white/[0.02]">
+          <h1 className="text-xl font-black text-white tracking-tighter">{config.platformName}</h1>
+          <div className="flex items-center gap-1.5 opacity-50">
+            <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse"></div>
+            <span className="text-[10px] text-text-muted font-bold uppercase tracking-widest">Admin Dashboard</span>
+          </div>
         </div>
         
         <nav className="flex-1 overflow-y-auto py-6 px-3">
@@ -40,6 +46,30 @@ const AdminLayout = () => {
              <SidebarLink to="/admin/settings" icon={Settings}>Settings</SidebarLink>
           </div>
         </nav>
+
+        {/* Support Footer */}
+        {(config.supportEmail || config.supportPhone) && (
+          <div className="p-4 mx-3 mb-6 bg-white/[0.03] border border-white/5 rounded-2xl">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="p-1.5 bg-primary/20 rounded-lg text-primary">
+                <Info className="w-3 h-3" />
+              </div>
+              <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">System Support</span>
+            </div>
+            <div className="space-y-2">
+              {config.supportEmail && (
+                <a href={`mailto:${config.supportEmail}`} className="flex items-center gap-2 text-[11px] text-white/60 hover:text-white transition-colors">
+                  <Mail className="w-3 h-3" /> {config.supportEmail}
+                </a>
+              )}
+              {config.supportPhone && (
+                <a href={`tel:${config.supportPhone}`} className="flex items-center gap-2 text-[11px] text-white/60 hover:text-white transition-colors">
+                  <Phone className="w-3 h-3" /> {config.supportPhone}
+                </a>
+              )}
+            </div>
+          </div>
+        )}
       </aside>
 
       {/* Main Content Area */}

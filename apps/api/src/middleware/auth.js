@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import Store from '../models/Store.js';
 import { ROLES } from '@restaurant-saas/shared';
 
 export const isAuthenticated = async (req, res, next) => {
@@ -44,6 +45,14 @@ export const isAuthenticated = async (req, res, next) => {
 
     if (currentVersion !== tokenVersion) {
       return res.status(401).json({ success: false, message: 'Session expired or forced logout' });
+    }
+
+    // Check if store is active (for non-superadmins)
+    if (user.role !== ROLES.SUPER_ADMIN && user.storeId) {
+      const store = await Store.findById(user.storeId).select('isActive');
+      if (store && !store.isActive) {
+        return res.status(401).json({ success: false, message: 'Restaurant is currently inactive. Access suspended.' });
+      }
     }
 
     // Attach user to request - use plain object to avoid Mongoose issues in other middlewares

@@ -35,11 +35,43 @@ export const getSuperAdminKPIs = async () => {
 
   const monthlyRevenue = revenueResult.length > 0 ? revenueResult[0].totalRevenue : 0;
 
+  // 7-day order volume trend
+  const startOf7Days = new Date();
+  startOf7Days.setDate(startOf7Days.getDate() - 6);
+  startOf7Days.setHours(0, 0, 0, 0);
+
+  const orderVolumeAggr = await Order.aggregate([
+    { $match: { createdAt: { $gte: startOf7Days } } },
+    {
+      $group: {
+        _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+        count: { $sum: 1 },
+      },
+    },
+    { $sort: { _id: 1 } },
+  ]);
+
+  // Format for the chart (ensure all 7 days are present)
+  const daysMap = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const orderVolume = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().split('T')[0];
+    const dayName = daysMap[d.getDay()];
+    const dayData = orderVolumeAggr.find(v => v._id === dateStr);
+    orderVolume.push({
+      day: dayName,
+      volume: dayData ? dayData.count : 0
+    });
+  }
+
   return {
     totalStores,
     activeStores,
     todaysOrders,
     monthlyRevenue,
+    orderVolume,
   };
 };
 

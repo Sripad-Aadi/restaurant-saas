@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, LogOut, Shield, User, Loader2, MoreVertical, Ban, CheckCircle2, Edit2, UserPlus, Trash2 } from 'lucide-react';
+import { Search, Filter, LogOut, Shield, User, Loader2, MoreVertical, Ban, CheckCircle2, Edit2, UserPlus, Trash2, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import DataTable from '../../components/DataTable';
 import StatusBadge from '../../components/StatusBadge';
 import UserDrawer from './components/UserDrawer';
@@ -8,6 +9,7 @@ import api from '../../api';
 import { ROLES } from '@restaurant-saas/shared';
 
 const Users = () => {
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -53,20 +55,7 @@ const Users = () => {
     }
   };
 
-  const handleDeleteClick = (id) => {
-    setModalConfig({ isOpen: true, userId: id });
-  };
 
-  const confirmDelete = async () => {
-    try {
-      await api.delete(`/users/${modalConfig.userId}`);
-      setModalConfig({ ...modalConfig, isOpen: false });
-      fetchUsers();
-    } catch (err) {
-      setError('Failed to delete user');
-      setModalConfig({ ...modalConfig, isOpen: false });
-    }
-  };
 
   const handleToggleStatus = async (userId) => {
     setError('');
@@ -100,38 +89,14 @@ const Users = () => {
     )},
     { header: 'Store', accessor: 'store', render: (row) => row.storeId?.name || '-' },
     { header: 'Status', accessor: 'isActive', render: (row) => <StatusBadge status={row.isActive ? 'Active' : 'Inactive'} /> },
-    { header: 'Last Login', accessor: 'lastLogin', render: (row) => row.lastLogin ? new Date(row.lastLogin).toLocaleDateString() : 'Never' },
+
     { header: 'Actions', accessor: 'actions', render: (row) => (
-      <div className="flex items-center gap-2">
-        <button 
-          onClick={() => handleEditUser(row.raw)}
-          title="Edit User"
-          className="p-1.5 text-text-muted hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
-        >
-          <Edit2 className="w-4 h-4" />
-        </button>
-        <button 
-          onClick={() => handleForceLogout(row.id)}
-          title="Force Logout"
-          className="p-1.5 text-text-muted hover:text-error hover:bg-error/10 rounded-lg transition-colors"
-        >
-          <LogOut className="w-4 h-4" />
-        </button>
-        <button 
-          onClick={() => handleToggleStatus(row.id)}
-          title={row.isActive ? 'Deactivate' : 'Activate'}
-          className={`p-1.5 rounded-lg transition-colors ${row.isActive ? 'text-text-muted hover:text-error hover:bg-error/10' : 'text-text-muted hover:text-success hover:bg-success/10'}`}
-        >
-          {row.isActive ? <Ban className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
-        </button>
-        <button 
-          onClick={() => handleDeleteClick(row.id)}
-          title="Delete User"
-          className="p-1.5 text-text-muted hover:text-error hover:bg-error/10 rounded-lg transition-colors"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
-      </div>
+      <button 
+        onClick={() => navigate(`/superadmin/users/${row.id}`)}
+        className="px-3 py-1.5 text-xs font-bold rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-all flex items-center gap-1.5"
+      >
+        View Profile <ArrowRight className="w-3.5 h-3.5" />
+      </button>
     )}
   ];
 
@@ -142,7 +107,7 @@ const Users = () => {
     role: user.role,
     storeId: user.storeId,
     isActive: user.isActive,
-    lastLogin: user.lastLogin,
+
     raw: user
   }));
 
@@ -186,7 +151,7 @@ const Users = () => {
           className="px-4 py-2.5 text-sm border border-border-light rounded-xl outline-none bg-card-white cursor-pointer"
         >
           <option value="">All Roles</option>
-          <option value={ROLES.SUPER_ADMIN}>Super Admins</option>
+
           <option value={ROLES.ADMIN}>Store Admins</option>
           <option value={ROLES.CUSTOMER}>Customers</option>
         </select>
@@ -201,7 +166,7 @@ const Users = () => {
           <DataTable 
             columns={columns} 
             data={tableData} 
-            onRowClick={(row) => handleEditUser(row.raw)}
+            onRowClick={(row) => navigate(`/superadmin/users/${row.id}`)}
           />
         )}
       </div>
@@ -211,14 +176,6 @@ const Users = () => {
         onClose={() => setIsDrawerOpen(false)}
         user={editingUser}
         onSave={fetchUsers}
-      />
-
-      <ConfirmationModal 
-        isOpen={modalConfig.isOpen}
-        onClose={() => setModalConfig({ ...modalConfig, isOpen: false })}
-        onConfirm={confirmDelete}
-        title="Delete User"
-        message="Are you sure you want to delete this user? This action cannot be undone."
       />
     </div>
   );

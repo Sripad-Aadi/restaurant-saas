@@ -164,25 +164,9 @@ const Restaurants = () => {
       <div className="flex items-center gap-2">
         <button 
           onClick={() => navigate(`/superadmin/restaurants/${row.id}`)}
-          className="p-1.5 text-xs font-bold rounded-lg text-info hover:bg-info/10 transition-colors"
+          className="px-4 py-1.5 text-xs font-bold rounded-lg bg-info/10 text-info hover:bg-info/20 transition-all active:scale-95"
         >
-          View
-        </button>
-        <button 
-          onClick={() => toggleStatus(row.id, row.rawStatus)}
-          className={`p-1.5 text-xs font-bold rounded-lg transition-colors ${
-            row.rawStatus 
-              ? "text-error hover:bg-error/10"
-              : "text-success hover:bg-success/10"
-          }`}
-        >
-          {row.rawStatus ? 'Deactivate' : 'Activate'}
-        </button>
-        <button 
-          onClick={() => handleImpersonate(row.id)}
-          className="p-1.5 text-xs font-bold rounded-lg text-primary hover:bg-primary/10 transition-colors"
-        >
-          Impersonate
+          View Details
         </button>
       </div>
     )}

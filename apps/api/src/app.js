@@ -16,6 +16,7 @@ import orderRoutes from './modules/orders/order.routes.js';
 import paymentRoutes from './modules/payments/payment.routes.js';
 import analyticsRoutes from './modules/analytics/analytics.routes.js';
 import userRoutes from './modules/users/user.routes.js';
+import systemRoutes from './modules/system/system.routes.js';
 
 const app = express();
 
@@ -46,6 +47,7 @@ app.use('/api/orders', standardLimiter, orderRoutes);
 app.use('/api/payments', standardLimiter, paymentRoutes);
 app.use('/api/analytics', standardLimiter, analyticsRoutes);
 app.use('/api/users', standardLimiter, userRoutes);
+app.use('/api/system', standardLimiter, systemRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

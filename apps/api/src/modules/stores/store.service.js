@@ -112,7 +112,59 @@ export const getAllStores = async (filters = {}) => {
   };
 };
 
-export const getStoreById = async (id) => {
+export const getStoreById = async (id, includeStats = false) => {
+  if (includeStats) {
+    const stats = await Store.aggregate([
+      { $match: { _id: new mongoose.Types.ObjectId(id) } },
+      {
+        $lookup: {
+          from: 'orders',
+          localField: '_id',
+          foreignField: 'storeId',
+          as: 'orderStats'
+        }
+      },
+      {
+        $lookup: {
+          from: 'products',
+          localField: '_id',
+          foreignField: 'storeId',
+          as: 'productStats'
+        }
+      },
+      {
+        $addFields: {
+          orderCount: { $size: '$orderStats' },
+          productCount: { $size: '$productStats' },
+          totalRevenue: {
+            $sum: {
+              $map: {
+                input: '$orderStats',
+                as: 'order',
+                in: {
+                  $cond: [
+                    { $in: ['$$order.status', ['COMPLETED', 'DELIVERED', 'READY']] },
+                    '$$order.total',
+                    0
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        $project: {
+          orderStats: 0,
+          productStats: 0
+        }
+      }
+    ]);
+    
+    if (!stats || stats.length === 0) throw { status: 404, message: 'Store not found' };
+    return stats[0];
+  }
+
   const store = await Store.findById(id);
   if (!store) throw { status: 404, message: 'Store not found' };
   return store;

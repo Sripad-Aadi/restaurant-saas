@@ -1,6 +1,8 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { CustomerProvider } from './CustomerContext';
+import { ConfigProvider } from './ConfigContext';
+import MaintenanceOverlay from './components/MaintenanceOverlay';
 
 import LandingPage from './pages/LandingPage';
 import MenuPage from './pages/MenuPage';
@@ -10,24 +12,27 @@ import CustomerOrdersPage from './pages/CustomerOrdersPage';
 
 function App() {
   return (
-    <CustomerProvider>
-      <BrowserRouter>
-        <div className="min-h-screen flex flex-col">
-          <Routes>
-            {/* Entry point from QR code */}
-            <Route path="/table/:storeSlug/:tableId" element={<LandingPage />} />
-            
-            {/* Main customer flows */}
-            <Route path="/menu" element={<MenuPage />} />
-            <Route path="/orders" element={<CustomerOrdersPage />} />
-            <Route path="/checkout" element={<CheckoutPage />} />
-            <Route path="/order/:orderId" element={<OrderTrackingPage />} />
-            
-            <Route path="*" element={<div className="flex-1 flex items-center justify-center p-4 text-center"><h1>Oops, please scan your QR code again!</h1></div>} />
-          </Routes>
-        </div>
-      </BrowserRouter>
-    </CustomerProvider>
+    <ConfigProvider>
+      <CustomerProvider>
+        <BrowserRouter>
+          <div className="min-h-screen flex flex-col relative">
+            <MaintenanceOverlay />
+            <Routes>
+              {/* Entry point from QR code */}
+              <Route path="/table/:storeSlug/:tableId" element={<LandingPage />} />
+              
+              {/* Main customer flows */}
+              <Route path="/menu" element={<MenuPage />} />
+              <Route path="/orders" element={<CustomerOrdersPage />} />
+              <Route path="/checkout" element={<CheckoutPage />} />
+              <Route path="/order/:orderId" element={<OrderTrackingPage />} />
+              
+              <Route path="*" element={<div className="flex-1 flex items-center justify-center p-4 text-center"><h1>Oops, please scan your QR code again!</h1></div>} />
+            </Routes>
+          </div>
+        </BrowserRouter>
+      </CustomerProvider>
+    </ConfigProvider>
   );
 }
 
