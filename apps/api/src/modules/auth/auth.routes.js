@@ -4,6 +4,7 @@ import validate from '../../middleware/validate.js';
 import { isAuthenticated } from '../../middleware/auth.js';
 import { authLimiter } from '../../middleware/rateLimiter.js';
 import { loginSchema, registerSchema } from './auth.validator.js';
+import { createLog } from '../system/log.service.js';
 
 const router = Router();
 
@@ -20,6 +21,15 @@ router.post('/register', authLimiter, validate(registerSchema), async (req, res)
     });
 
     res.status(201).json({ success: true, accessToken, user });
+    
+    await createLog({
+      userId: user.id,
+      action: 'USER_REGISTER',
+      entityType: 'User',
+      entityId: user.id,
+      details: { email: user.email, role: user.role },
+      req
+    });
   } catch (err) {
     res.status(err.status || 500).json({ success: false, message: err.message });
   }
@@ -38,6 +48,15 @@ router.post('/login', authLimiter, validate(loginSchema), async (req, res) => {
     });
 
     res.json({ success: true, accessToken, user });
+
+    await createLog({
+      userId: user.id,
+      action: 'USER_LOGIN',
+      entityType: 'User',
+      entityId: user.id,
+      details: { email: user.email, role: user.role },
+      req
+    });
   } catch (err) {
     res.status(err.status || 500).json({ success: false, message: err.message });
   }
@@ -86,6 +105,14 @@ router.post('/logout', isAuthenticated, async (req, res) => {
     await authService.logout(req.user.userId);
     res.clearCookie('refreshToken');
     res.json({ success: true, message: 'Logged out successfully' });
+
+    await createLog({
+      userId: req.user.id,
+      action: 'USER_LOGOUT',
+      entityType: 'User',
+      entityId: req.user.id,
+      req
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

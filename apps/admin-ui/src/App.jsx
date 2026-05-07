@@ -26,6 +26,8 @@ import Restaurants from './pages/SuperAdmin/Restaurants';
 import RestaurantDetail from './pages/SuperAdmin/RestaurantDetail';
 import SuperAdminAnalytics from './pages/SuperAdmin/Analytics';
 import SuperAdminSettings from './pages/SuperAdmin/Settings';
+import SecurityLogs from './pages/SuperAdmin/SecurityLogs';
+import Subscriptions from './pages/SuperAdmin/Subscriptions';
 import Users from './pages/SuperAdmin/Users';
 import UserDetail from './pages/SuperAdmin/UserDetail';
 
@@ -73,10 +75,11 @@ function App() {
               <Route path="dashboard" element={<SuperAdminDashboard />} />
               <Route path="restaurants" element={<Restaurants />} />
               <Route path="restaurants/:id" element={<RestaurantDetail />} />
-              <Route path="subscriptions" element={<div className="p-8 font-bold text-text-muted">Subscriptions Module (Coming Soon)</div>} />
+              <Route path="subscriptions" element={<Subscriptions />} />
               <Route path="users" element={<Users />} />
               <Route path="users/:id" element={<UserDetail />} />
               <Route path="analytics" element={<SuperAdminAnalytics />} />
+              <Route path="security" element={<SecurityLogs />} />
               <Route path="settings" element={<SuperAdminSettings />} />
               <Route index element={<Navigate to="dashboard" replace />} />
             </Route>
