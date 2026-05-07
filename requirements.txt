@@ -1,0 +1,28 @@
+# System Requirements
+node >= 18.0.0
+mongodb >= 6.0.0
+redis >= 7.0.0
+
+# Core Backend Dependencies
+express
+mongoose
+socket.io
+jsonwebtoken
+bcryptjs
+multer
+zod
+cors
+cookie-parser
+dotenv
+
+# Core Frontend Dependencies
+react
+react-dom
+react-router-dom
+lucide-react
+axios
+socket.io-client
+tailwindcss
+@dnd-kit/core
+@dnd-kit/sortable
+recharts

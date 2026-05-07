@@ -71,7 +71,6 @@ export const invalidateMenuCache = async (storeId) => {
     if (store) {
       const cacheKey = `menu:slug:${store.slug}`;
       await redis.del(cacheKey);
-      console.log(`Cache invalidated for store: ${store.slug}`);
     }
   } catch (err) {
     console.error('Failed to invalidate menu cache:', err.message);

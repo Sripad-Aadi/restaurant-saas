@@ -53,12 +53,10 @@ const LiveOrders = () => {
     socketRef.current = socket;
 
     socket.on('connect', () => {
-      console.log('✅ [Socket] Connected to admin namespace');
       setIsConnected(true);
     });
 
     socket.on('disconnect', () => {
-      console.log('❌ [Socket] Disconnected');
       setIsConnected(false);
     });
 
@@ -68,7 +66,6 @@ const LiveOrders = () => {
     });
 
     socket.on(SOCKET_EVENTS.ORDER_NEW, (newOrder) => {
-      console.log('🔔 [Socket] New order received:', newOrder.orderNumber || newOrder._id);
       
       // Update orders list instantly
       setOrders(prev => {
@@ -83,7 +80,6 @@ const LiveOrders = () => {
     });
 
     socket.on(SOCKET_EVENTS.ORDER_STATUS_CHANGED, (data) => {
-      console.log('🔄 [Socket] Order update received:', data);
       
       setOrders(prev => prev.map(order => 
         order._id === data.orderId ? { 
@@ -108,7 +104,6 @@ const LiveOrders = () => {
     socket.connect();
 
     return () => {
-      console.log('🔌 [Socket] Disconnecting admin socket');
       socket.disconnect();
     };
   }, [user?.storeId]);

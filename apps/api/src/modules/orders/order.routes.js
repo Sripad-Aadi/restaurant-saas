@@ -18,22 +18,12 @@ router.post(
   async (req, res) => {
     try {
       const idempotencyKey = req.headers['x-idempotency-key'] || req.body.idempotencyKey;
-      console.log('[/orders POST] Starting order creation', {
-        storeId: req.tenant.storeId,
-        userId: req.user.userId,
-        idempotencyKey
-      });
 
       const { order, isDuplicate } = await orderService.createOrder(
         req.tenant.storeId,
         req.user.userId,
         { ...req.body, idempotencyKey }
       );
-
-      console.log('[/orders POST] Order created successfully', { 
-        orderId: order?._id, 
-        isDuplicate 
-      });
 
       res.status(isDuplicate ? 200 : 201).json({
         success: true,

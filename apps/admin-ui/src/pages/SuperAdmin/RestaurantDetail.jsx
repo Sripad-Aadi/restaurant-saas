@@ -8,6 +8,7 @@ import {
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import DataTable from '../../components/DataTable';
 import StatusBadge from '../../components/StatusBadge';
+import ImageUpload from '../../components/ImageUpload';
 import api, { setAccessToken } from '../../api';
 import { useAuth } from '../../AuthContext';
 import ConfirmationModal from '../../components/ConfirmationModal';
@@ -29,6 +30,8 @@ const RestaurantDetail = () => {
   // Settings Form State
   const [settingsForm, setSettingsForm] = useState({
     name: '',
+    logo: '',
+    coverImage: '',
     cuisineType: '',
     avgWaitTime: '',
     description: '',
@@ -52,6 +55,8 @@ const RestaurantDetail = () => {
       setStore(data);
       setSettingsForm({
         name: data.name || '',
+        logo: data.logo || '',
+        coverImage: data.coverImage || '',
         cuisineType: data.cuisineType || '',
         avgWaitTime: data.avgWaitTime || '',
         description: data.description || '',
@@ -374,8 +379,20 @@ const RestaurantDetail = () => {
                          <input 
                            type="text" value={settingsForm.name} 
                            onChange={(e) => setSettingsForm({...settingsForm, name: e.target.value})}
-                           className="w-full p-3 border border-border-light rounded-xl focus:border-primary outline-none" 
+                           className="w-full p-3 border border-border-light rounded-xl focus:border-primary outline-none font-bold" 
                          />
+                      </div>
+                      <div className="col-span-2 grid grid-cols-2 gap-6">
+                        <ImageUpload 
+                          value={settingsForm.logo}
+                          onChange={(url) => setSettingsForm({...settingsForm, logo: url})}
+                          label="Restaurant Logo"
+                        />
+                        <ImageUpload 
+                          value={settingsForm.coverImage}
+                          onChange={(url) => setSettingsForm({...settingsForm, coverImage: url})}
+                          label="Cover Photo"
+                        />
                       </div>
                       <div>
                          <label className="block text-xs font-bold text-text-secondary uppercase mb-1.5">Cuisine Type</label>

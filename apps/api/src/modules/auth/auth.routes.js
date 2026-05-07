@@ -21,7 +21,7 @@ router.post('/register', authLimiter, validate(registerSchema), async (req, res)
     });
 
     res.status(201).json({ success: true, accessToken, user });
-    
+
     await createLog({
       userId: user.id,
       action: 'USER_REGISTER',

@@ -7,11 +7,11 @@ import User from '../../models/User.js';
 
 const generateAccessToken = (user) => {
   return jwt.sign(
-    { 
-      userId: user._id, 
-      role: user.role, 
+    {
+      userId: user._id,
+      role: user.role,
       storeId: user.storeId,
-      tokenVersion: user.tokenVersion || 0 
+      tokenVersion: user.tokenVersion || 0
     },
     process.env.JWT_ACCESS_SECRET,
     { expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m' }
@@ -140,13 +140,13 @@ export const guestLogin = async (storeId) => {
   // Create a minimal user record for the guest or just return a token
   // For simplicity and to avoid cluttering the DB, we can just return a token with a temporary guest ID
   const guestId = new mongoose.Types.ObjectId();
-  
+
   const token = jwt.sign(
-    { 
-      userId: guestId, 
-      role: 'customer', 
+    {
+      userId: guestId,
+      role: 'customer',
       storeId: storeId,
-      isGuest: true 
+      isGuest: true
     },
     process.env.JWT_ACCESS_SECRET,
     { expiresIn: '24h' }

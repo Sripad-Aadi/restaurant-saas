@@ -18,7 +18,6 @@ const registerAdminNamespace = (io) => {
 
   adminNsp.on('connection', (socket) => {
     const user = socket.data.user;
-    console.log(`[/admin] Admin connected: ${user.userId} for store: ${user.storeId}`);
 
     // Admin joins their store's room automatically upon connection
     if (user.storeId) {
@@ -27,7 +26,6 @@ const registerAdminNamespace = (io) => {
     }
 
     socket.on('disconnect', (reason) => {
-      console.log(`[/admin] Admin disconnected: ${user.userId} — ${reason}`);
     });
   });
 

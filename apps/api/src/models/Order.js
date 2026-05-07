@@ -149,8 +149,8 @@ orderSchema.index({ storeId: 1, createdAt: -1 });
 // SuperAdmin platform-wide queries
 orderSchema.index({ createdAt: -1 });
 
-// Idempotency enforcement
-orderSchema.index({ idempotencyKey: 1 }, { unique: true, sparse: true });
+// Idempotency enforcement — unique per store
+orderSchema.index({ storeId: 1, idempotencyKey: 1 }, { unique: true, sparse: true });
 
 // Customer order history
 orderSchema.index({ customerId: 1, storeId: 1, createdAt: -1 });

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Store, User, Lock, Bell, Loader2, Save } from 'lucide-react';
+import ImageUpload from '../../components/ImageUpload';
 import api from '../../api';
 
 const AdminSettings = () => {
@@ -12,6 +13,7 @@ const AdminSettings = () => {
   const [storeData, setStoreData] = useState({
     name: '',
     logo: '',
+    coverImage: '',
     description: '',
     cuisineType: '',
     timezone: '',
@@ -47,6 +49,7 @@ const AdminSettings = () => {
         setStoreData({
           name: store.name || '',
           logo: store.logo || '',
+          coverImage: store.coverImage || '',
           description: store.description || '',
           cuisineType: store.cuisineType || '',
           timezone: store.timezone || '',
@@ -216,9 +219,19 @@ const AdminSettings = () => {
                     <input type="text" placeholder="e.g. 15-20 mins" value={storeData.avgWaitTime} onChange={(e) => setStoreData({...storeData, avgWaitTime: e.target.value})} className="w-full px-4 py-2 border border-border-light rounded-xl focus:ring-2 focus:ring-primary/20 outline-none" />
                   </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-text-secondary mb-1">Logo URL</label>
-                  <input type="url" value={storeData.logo} onChange={(e) => setStoreData({...storeData, logo: e.target.value})} className="w-full px-4 py-2 border border-border-light rounded-xl focus:ring-2 focus:ring-primary/20 outline-none" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <ImageUpload 
+                    value={storeData.logo} 
+                    onChange={(url) => setStoreData({...storeData, logo: url})} 
+                    label="Store Logo"
+                    hint="Square image (1:1)"
+                  />
+                  <ImageUpload 
+                    value={storeData.coverImage} 
+                    onChange={(url) => setStoreData({...storeData, coverImage: url})} 
+                    label="Cover Photo"
+                    hint="Wide image (16:9)"
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-text-secondary mb-1">Timezone</label>

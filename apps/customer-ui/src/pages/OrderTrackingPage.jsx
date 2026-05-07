@@ -72,7 +72,6 @@ export default function OrderTrackingPage() {
     socketRef.current = socket;
 
     socket.on('connect', () => {
-      console.log('Connected to socket server');
       socket.emit('join:order', orderId);
       socket.emit('order:sync', orderId);
     });

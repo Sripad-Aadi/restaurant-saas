@@ -7,12 +7,10 @@ import { emitToRoom } from '../../config/socketEmitter.js';
 import { SOCKET_EVENTS } from '@restaurant-saas/shared';
 
 export const createOrder = async (storeId, customerId, { tableId, idempotencyKey, items, specialInstructions = '' }) => {
-  console.log('[order.service] createOrder called', { storeId, tableId, itemCount: items?.length });
 
   // 1. Check for duplicate order via idempotency
   const existing = await Order.findOne({ storeId, idempotencyKey }).select('+idempotencyKey');
   if (existing) {
-    console.log('[order.service] Duplicate order found via idempotencyKey');
     return { order: existing, isDuplicate: true };
   }
 
@@ -22,15 +20,12 @@ export const createOrder = async (storeId, customerId, { tableId, idempotencyKey
   }
 
   const productIds = items.map((i) => i.productId);
-  console.log('[order.service] Fetching products', productIds);
   const products = await Product.find({ storeId, _id: { $in: productIds } });
   const productMap = new Map(products.map((p) => [p._id.toString(), p]));
-  console.log(`[order.service] Found ${products.length} products in DB`);
 
   // 3. Fetch table info if provided (can be ObjectId or Table Number from QR URL)
   let table = null;
   if (tableId) {
-    console.log('[order.service] Fetching table info for identifier:', tableId);
     if (mongoose.Types.ObjectId.isValid(tableId)) {
       table = await Table.findOne({ storeId, _id: tableId });
     } else {
@@ -40,7 +35,6 @@ export const createOrder = async (storeId, customerId, { tableId, idempotencyKey
         table = await Table.findOne({ storeId, tableNumber: tableNum });
       }
     }
-    console.log('[order.service] Table result:', table ? `Found #${table.tableNumber}` : 'Not found');
   }
 
   // 4. Calculate totals and build item snapshots
@@ -74,11 +68,8 @@ export const createOrder = async (storeId, customerId, { tableId, idempotencyKey
   }
 
   // 5. Generate order number and save
-  console.log('[order.service] Generating order number');
   const orderNumber = await Order.generateOrderNumber(storeId);
-  console.log('[order.service] New order number:', orderNumber);
 
-  console.log('[order.service] Attempting Order.create');
   const order = await Order.create({
     storeId,
     orderNumber,
@@ -92,11 +83,9 @@ export const createOrder = async (storeId, customerId, { tableId, idempotencyKey
     idempotencyKey,
     status:      'PENDING',
   });
-  console.log('[order.service] Order created in DB');
 
   // 6. Async side effects (non-blocking for response)
   // Notify admin dashboard
-  console.log('[order.service] Emitting side effects');
   emitToRoom('/admin', `store:${storeId}`, SOCKET_EVENTS.ORDER_NEW, order.toObject())
     .catch(err => console.error('Failed to emit order:new:', err.message));
 

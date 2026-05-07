@@ -7,7 +7,6 @@ const registerOrdersNamespace = (io) => {
 
   ordersNsp.on('connection', (socket) => {
     const user = socket.data.user;
-    console.log(`[/orders] connected: ${user.userId} (${user.role})`);
 
     // ── Join appropriate rooms based on role ─────────────────
 
@@ -24,7 +23,6 @@ const registerOrdersNamespace = (io) => {
         }
 
         socket.join(`store:${storeId}`);
-        console.log(`Admin ${user.userId} joined store:${storeId}`);
         socket.emit('joined', { room: `store:${storeId}` });
       } catch (err) {
         socket.emit('error', { message: err.message });
@@ -34,19 +32,16 @@ const registerOrdersNamespace = (io) => {
     // Customers join a specific order room to track their order
     socket.on('join:order', (orderId) => {
       socket.join(`order:${orderId}`);
-      console.log(`Customer ${user.userId} joined order:${orderId}`);
       socket.emit('joined', { room: `order:${orderId}` });
     });
 
     // Customers join a table room
     socket.on('join:table', (tableId) => {
       socket.join(`table:${tableId}`);
-      console.log(`${user.userId} joined table:${tableId}`);
       socket.emit('joined', { room: `table:${tableId}` });
     });
 
     socket.on('disconnect', (reason) => {
-      console.log(`[/orders] disconnected: ${user.userId} — ${reason}`);
     });
   });
 

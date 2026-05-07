@@ -18,13 +18,23 @@ import analyticsRoutes from './modules/analytics/analytics.routes.js';
 import userRoutes from './modules/users/user.routes.js';
 import systemRoutes from './modules/system/system.routes.js';
 import subscriptionRoutes from './modules/subscriptions/subscription.routes.js';
+import uploadRoutes from './modules/system/upload.routes.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
 connectDB();
 
 app.use(cors({ origin: ['http://localhost:3000', 'http://localhost:3001'], credentials: true }));
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// Static folder for uploads
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // Webhook route needs raw body — must be registered BEFORE express.json()
 app.use('/api/payments/webhook', express.raw({ type: 'application/json' }), (req, res, next) => {
@@ -50,6 +60,7 @@ app.use('/api/analytics', standardLimiter, analyticsRoutes);
 app.use('/api/users', standardLimiter, userRoutes);
 app.use('/api/system', standardLimiter, systemRoutes);
 app.use('/api/subscriptions', standardLimiter, subscriptionRoutes);
+app.use('/api/upload', standardLimiter, uploadRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);

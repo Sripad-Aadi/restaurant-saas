@@ -60,12 +60,41 @@ export default function MenuPage() {
 
   return (
     <div className="flex-1 pb-24 bg-gray-50 flex flex-col">
-      {/* Header */}
+      {/* Restaurant Hero Section */}
+      <div className="relative h-64 w-full overflow-hidden">
+        {store?.coverImage ? (
+          <img 
+            src={store.coverImage} 
+            alt="Cover" 
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-slate-800 to-slate-900" />
+        )}
+        <div className="absolute inset-0 bg-black/30 backdrop-blur-[1px]" />
+        
+        {/* Store Info Overlay */}
+        <div className="absolute bottom-0 left-0 right-0 p-6 flex items-end gap-6">
+          <div className="w-20 h-20 rounded-2xl bg-white p-1 shadow-2xl border border-white/20 shrink-0 overflow-hidden">
+            {store?.logo ? (
+              <img src={store.logo} alt="Logo" className="w-full h-full object-cover rounded-xl" />
+            ) : (
+              <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-400 font-bold">Logo</div>
+            )}
+          </div>
+          <div className="flex-1 pb-1">
+            <h1 className="text-3xl font-black text-white tracking-tight drop-shadow-md">{store?.name || 'Our Menu'}</h1>
+            {store?.description && <p className="text-sm text-white/80 font-medium mt-1 line-clamp-1 drop-shadow-md">{store.description}</p>}
+          </div>
+        </div>
+      </div>
+
+      {/* Header / Navigation */}
       <div className="sticky top-0 z-20 bg-white/90 backdrop-blur-md shadow-sm border-b border-gray-100">
-        <div className="p-4 flex items-start justify-between">
-            <div className="flex-1 pr-4">
-              <h1 className="text-2xl font-black text-slate-800 tracking-tight">{store?.name || 'Our Menu'}</h1>
-              {store?.description && <p className="text-xs text-slate-500 font-medium mt-1 line-clamp-1">{store.description}</p>}
+        <div className="p-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 bg-success rounded-full animate-pulse"></span>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Store is Open</span>
             </div>
             <button 
               onClick={() => navigate('/orders')}
