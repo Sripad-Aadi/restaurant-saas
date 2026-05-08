@@ -5,7 +5,7 @@ const ConfigContext = createContext();
 
 export const ConfigProvider = ({ children }) => {
   const [config, setConfig] = useState({
-    platformName: 'Antigravity Restaurants',
+    platformName: 'DineFlow',
     isMaintenanceMode: false,
     maintenanceMessage: '',
     loading: true

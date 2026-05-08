@@ -21,9 +21,9 @@ const SuperAdminSettings = () => {
   });
 
   const [platformData, setPlatformData] = useState({
-    platformName: 'Antigravity Restaurants',
-    supportEmail: 'support@antigravity.com',
-    supportPhone: '+91 98765 43210',
+    platformName: 'DineFlow',
+    supportEmail: 'support@dineflow.com',
+    supportPhone: '',
     isMaintenanceMode: false,
     maintenanceMessage: 'We are currently performing scheduled maintenance to improve our services. Please check back shortly.'
   });
