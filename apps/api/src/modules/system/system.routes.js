@@ -13,7 +13,7 @@ router.get('/public/settings', async (req, res) => {
     res.json({ 
       success: true, 
       data: {
-        platformName: settings.platformName || 'Antigravity Restaurants',
+        platformName: settings.platformName || 'DineFlow',
         isMaintenanceMode: settings.isMaintenanceMode || false,
         maintenanceMessage: settings.maintenanceMessage || '',
         supportEmail: settings.supportEmail || '',
