@@ -11,15 +11,20 @@ router.post('/', isAuthenticated, upload.single('image'), (req, res) => {
       return res.status(400).json({ success: false, message: 'Please upload a file' });
     }
 
-    // Construct the full URL
-    const baseUrl = `${req.protocol}://${req.get('host')}`;
-    const fileUrl = `${baseUrl}/uploads/${req.file.filename}`;
+    // If Cloudinary is used, path is the full URL
+    // If DiskStorage is used, path is the local path (needs construction)
+    let fileUrl = req.file.path;
+    
+    if (!process.env.CLOUDINARY_CLOUD_NAME) {
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      fileUrl = `${baseUrl}/uploads/${req.file.filename}`;
+    }
 
     res.json({
       success: true,
       message: 'File uploaded successfully',
       url: fileUrl,
-      filename: req.file.filename,
+      filename: req.file.filename || req.file.public_id,
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

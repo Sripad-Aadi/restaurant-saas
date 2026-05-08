@@ -1,8 +1,20 @@
-import Redis from 'ioredis';
+import { Redis as UpstashRedis } from '@upstash/redis';
+import IORedis from 'ioredis';
 
-const redis = new Redis(process.env.REDIS_URL);
+let redis;
 
-redis.on('connect', () => console.log('Redis connected'));
-redis.on('error', (err) => console.error('Redis error:', err.message));
+if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+  // Use Upstash REST client (Serverless/Free Deployment)
+  redis = new UpstashRedis({
+    url: process.env.UPSTASH_REDIS_REST_URL,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN,
+  });
+  console.log('Redis initialized via Upstash REST');
+} else {
+  // Use ioredis (Development/Self-Hosted TCP)
+  redis = new IORedis(process.env.REDIS_URL || 'redis://localhost:6379');
+  redis.on('connect', () => console.log('Redis connected via TCP'));
+  redis.on('error', (err) => console.error('Redis error:', err.message));
+}
 
 export default redis;

@@ -9,7 +9,11 @@ export const standardLimiter = rateLimit({
   legacyHeaders: false,
   store: new RedisStore({
     prefix: 'rl:standard:',
-    sendCommand: (...args) => redis.call(...args),
+    sendCommand: (...args) => {
+      if (redis.call) return redis.call(...args);
+      const [command, ...rest] = args;
+      return redis[command.toLowerCase()](...rest);
+    }
   }),
   message: { success: false, message: 'Too many requests, please try again later' },
 });
@@ -21,7 +25,11 @@ export const authLimiter = rateLimit({
   legacyHeaders: false,
   store: new RedisStore({
     prefix: 'rl:auth:',
-    sendCommand: (...args) => redis.call(...args),
+    sendCommand: (...args) => {
+      if (redis.call) return redis.call(...args);
+      const [command, ...rest] = args;
+      return redis[command.toLowerCase()](...rest);
+    }
   }),
   message: { success: false, message: 'Too many login attempts, please try again in 15 minutes' },
 });
