@@ -29,7 +29,21 @@ const app = express();
 
 connectDB();
 
-app.use(cors({ origin: ['http://localhost:3000', 'http://localhost:3001'], credentials: true }));
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'https://restaurant-saas-admin-ui.vercel.app',
+  'https://restaurant-saas-customer-ui.vercel.app'
+];
+
+if (process.env.ALLOWED_ORIGINS) {
+  process.env.ALLOWED_ORIGINS.split(',').forEach(origin => allowedOrigins.push(origin.trim()));
+}
+
+app.use(cors({ 
+  origin: allowedOrigins, 
+  credentials: true 
+}));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
