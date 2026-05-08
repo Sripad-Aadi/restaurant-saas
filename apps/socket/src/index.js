@@ -8,7 +8,15 @@ import { pubClient, subClient } from './config/redis.js';
 import registerAdminNamespace from './namespaces/admin.js';
 import registerCustomerNamespace from './namespaces/customer.js';
 
-const httpServer = createServer();
+const httpServer = createServer((req, res) => {
+  if (req.url === '/health') {
+    res.writeHead(200);
+    res.end('ok');
+    return;
+  }
+  res.writeHead(404);
+  res.end();
+});
 
 const io = new Server(httpServer, {
   cors: {
@@ -54,8 +62,8 @@ subscriber.on('message', (channel, message) => {
   }
 });
 
-const PORT = process.env.SOCKET_PORT || 5001;
-httpServer.listen(PORT, () => {
+const PORT = process.env.PORT || 5001;
+httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`Socket.io server running on port ${PORT}`);
 });
 
