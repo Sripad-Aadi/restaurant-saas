@@ -4,19 +4,24 @@ import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
 
 const seed = async () => {
-  await mongoose.connect(process.env.MONGO_URI);
+  const conn = await mongoose.connect(process.env.MONGO_URI);
+  console.log(`Seed script connected to: ${conn.connection.host}/${conn.connection.name}`);
 
   // Create super admin if not exists
-  const existingAdmin = await User.findOne({ email: 'superadmin@restaurant.com' });
+  const email = 'superadmin@restaurant.com';
+  const existingAdmin = await User.findOne({ email });
+  
   if (!existingAdmin) {
     const password = await bcrypt.hash('Admin@123', 12);
     await User.create({
       name: 'Super Admin',
-      email: 'superadmin@restaurant.com',
+      email,
       password,
       role: 'superadmin',
     });
-    console.log('Super admin created');
+    console.log(`✅ Success: Super admin created (${email})`);
+  } else {
+    console.log(`ℹ️ Info: Super admin already exists (${email})`);
   }
 
   process.exit(0);
