@@ -27,6 +27,9 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
+// Trust Render's reverse proxy for rate limiting (X-Forwarded-For header)
+app.set('trust proxy', 1);
+
 connectDB();
 
 const allowedOrigins = [
