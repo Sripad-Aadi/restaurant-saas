@@ -18,9 +18,9 @@ export const createTable = async (storeId, storeSlug, data) => {
   return Table.create({
     storeId,
     tableNumber: data.tableNumber,
-    label:       data.label || `Table ${data.tableNumber}`,
-    qrCodeUrl:   url,
-    qrImageUrl:  qrDataUrl,
+    label: data.label || `Table ${data.tableNumber}`,
+    qrCodeUrl: url,
+    qrImageUrl: qrDataUrl,
   });
 };
 

@@ -33,7 +33,7 @@ export const getMenuBySlug = async (storeSlug) => {
       name: cat.name,
     },
     products: products
-      .filter((p) => p.categoryId.toString() === cat._id.toString())
+      .filter((p) => p.categoryId?.toString() === cat._id.toString())
       .map((p) => ({
         id:          p._id,
         name:        p.name,
