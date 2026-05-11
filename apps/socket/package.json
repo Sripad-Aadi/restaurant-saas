@@ -5,9 +5,7 @@
   "main": "src/index.js",
   "scripts": {
     "dev": "nodemon src/index.js",
-    "start": "node src/index.js",
-    "test": "echo \"No tests defined yet\" && exit 0",
-    "lint": "echo \"No lint defined yet\" && exit 0"
+    "start": "node src/index.js"
   },
   "dependencies": {
     "@socket.io/redis-adapter": "^8.3.0",
