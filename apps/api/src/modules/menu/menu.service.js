@@ -11,7 +11,8 @@ export const getMenuBySlug = async (storeSlug) => {
   // 1. Try to get from cache
   const cachedData = await redis.get(cacheKey);
   if (cachedData) {
-    return JSON.parse(cachedData);
+    // Upstash REST client might auto-parse JSON, whereas ioredis returns a string.
+    return typeof cachedData === 'string' ? JSON.parse(cachedData) : cachedData;
   }
 
   // 2. Fetch from DB if cache miss
