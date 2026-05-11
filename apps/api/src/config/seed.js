@@ -7,6 +7,8 @@ const seed = async () => {
   const conn = await mongoose.connect(process.env.MONGO_URI);
   console.log(`Seed script connected to: ${conn.connection.host}/${conn.connection.name}`);
 
+  const email = 'superadmin@restaurant.com';
+  
   // Reset super admin if it exists (to fix the double-hashing bug)
   await User.deleteOne({ email });
   
