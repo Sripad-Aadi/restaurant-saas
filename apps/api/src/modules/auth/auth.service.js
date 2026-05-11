@@ -23,13 +23,7 @@ const generateRefreshToken = async (userId) => {
   const key = `refresh:${userId}`;
   const ttl = 7 * 24 * 60 * 60; // 7 days
 
-  // Check if we are using Upstash REST (it has a .set method that expects options object)
-  if (redis.constructor.name === 'Redis' && !redis.call) {
-    await redis.set(key, token, { ex: ttl });
-  } else {
-    // Standard ioredis TCP
-    await redis.set(key, token, 'EX', ttl);
-  }
+  await redis.setEx(key, ttl, token);
   
   return token;
 };

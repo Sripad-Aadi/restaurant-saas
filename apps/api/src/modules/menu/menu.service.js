@@ -60,7 +60,7 @@ export const getMenuBySlug = async (storeSlug) => {
   };
 
   // 3. Store in cache
-  await redis.setex(cacheKey, CACHE_TTL, JSON.stringify(responseData));
+  await redis.setEx(cacheKey, CACHE_TTL, JSON.stringify(responseData));
 
   return responseData;
 };
