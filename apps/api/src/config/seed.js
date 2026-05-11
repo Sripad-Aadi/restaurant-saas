@@ -7,22 +7,16 @@ const seed = async () => {
   const conn = await mongoose.connect(process.env.MONGO_URI);
   console.log(`Seed script connected to: ${conn.connection.host}/${conn.connection.name}`);
 
-  // Create super admin if not exists
-  const email = 'superadmin@restaurant.com';
-  const existingAdmin = await User.findOne({ email });
+  // Reset super admin if it exists (to fix the double-hashing bug)
+  await User.deleteOne({ email });
   
-  if (!existingAdmin) {
-    const password = await bcrypt.hash('Admin@123', 12);
-    await User.create({
-      name: 'Super Admin',
-      email,
-      password,
-      role: 'superadmin',
-    });
-    console.log(`✅ Success: Super admin created (${email})`);
-  } else {
-    console.log(`ℹ️ Info: Super admin already exists (${email})`);
-  }
+  await User.create({
+    name: 'Super Admin',
+    email,
+    password: 'Admin@123', // Model hook will hash this once
+    role: 'superadmin',
+  });
+  console.log(`✅ Success: Super admin created/reset (${email})`);
 
   process.exit(0);
 };
