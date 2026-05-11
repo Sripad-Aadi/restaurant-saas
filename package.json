@@ -12,7 +12,9 @@
     "dev:customer": "npm run dev --workspace=apps/customer-ui",
     "dev:admin": "npm run dev --workspace=apps/admin-ui",
     "dev:backend": "concurrently \"npm run dev:api\" \"npm run dev:socket\"",
-    "dev": "concurrently \"npm run dev:api\" \"npm run dev:socket\" \"npm run dev:customer\" \"npm run dev:admin\""
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:socket\" \"npm run dev:customer\" \"npm run dev:admin\"",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
