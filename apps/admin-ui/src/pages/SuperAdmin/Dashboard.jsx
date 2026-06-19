@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Store, Activity, ShoppingBag, IndianRupee, ArrowUpRight, CheckCircle2, Search, Loader2 } from 'lucide-react';
 import StatusBadge from '../../components/StatusBadge';
 import DataTable from '../../components/DataTable';
 import { LineChart, Line, XAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import api, { setAccessToken } from '../../api';
-import { useAuth } from '../../AuthContext';
+import api from '../../api';
 
 const KPICard = ({ title, value, subtitle, icon: Icon, color, trend }) => (
   <div className="bg-card-white border border-border-light p-6 rounded-xl shadow-sm">
@@ -41,8 +40,6 @@ const SuperAdminDashboard = () => {
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
-  const { setUser } = useAuth();
-  const navigate = useNavigate();
 
   useEffect(() => {
     const controller = new AbortController();

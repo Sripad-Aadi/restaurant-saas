@@ -17,7 +17,6 @@ const Users = () => {
   const [error, setError] = useState('');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-  const [modalConfig, setModalConfig] = useState({ isOpen: false, userId: null });
 
   useEffect(() => {
     fetchUsers();
@@ -38,33 +37,6 @@ const Users = () => {
   const handleAddUser = () => {
     setEditingUser(null);
     setIsDrawerOpen(true);
-  };
-
-  const handleEditUser = (user) => {
-    setEditingUser(user);
-    setIsDrawerOpen(true);
-  };
-
-  const handleForceLogout = async (userId) => {
-    if (!window.confirm('Are you sure you want to force logout this user? All their active sessions will be invalidated.')) return;
-    setError('');
-    try {
-      await api.post(`/users/${userId}/logout`);
-    } catch (err) {
-      setError('Failed to force logout user');
-    }
-  };
-
-
-
-  const handleToggleStatus = async (userId) => {
-    setError('');
-    try {
-      await api.patch(`/users/${userId}/status`);
-      fetchUsers();
-    } catch (err) {
-      setError('Failed to update user status');
-    }
   };
 
   const columns = [

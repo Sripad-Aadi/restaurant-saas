@@ -6,12 +6,10 @@ import StatusBadge from '../../components/StatusBadge';
 import ConfirmationModal from '../../components/ConfirmationModal';
 import Drawer from '../../components/Drawer';
 import ImageUpload from '../../components/ImageUpload';
-import api, { setAccessToken } from '../../api';
-import { useAuth } from '../../AuthContext';
+import api from '../../api';
 
 const Restaurants = () => {
   const navigate = useNavigate();
-  const { setUser } = useAuth();
   const [showDrawer, setShowDrawer] = useState(false);
   const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(true);

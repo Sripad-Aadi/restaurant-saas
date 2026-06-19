@@ -17,7 +17,6 @@ const UserDetail = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [submitting, setSubmitting] = useState(false);
-  const [stores, setStores] = useState([]);
   
   const [modalConfig, setModalConfig] = useState({ 
     isOpen: false, 
@@ -36,7 +35,6 @@ const UserDetail = () => {
 
   useEffect(() => {
     fetchUser();
-    fetchStores();
   }, [id]);
 
   const fetchUser = async () => {
@@ -58,14 +56,6 @@ const UserDetail = () => {
     }
   };
 
-  const fetchStores = async () => {
-    try {
-      const response = await api.get('/stores');
-      setStores(response.data.data);
-    } catch (err) {
-      console.error('Failed to fetch stores', err);
-    }
-  };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
@@ -86,7 +76,7 @@ const UserDetail = () => {
       await api.patch(`/users/${id}/status`);
       await fetchUser();
     } catch (err) {
-      alert('Failed to update status');
+      alert('Failed to update status',err);
     }
   };
 
@@ -110,14 +100,7 @@ const UserDetail = () => {
     }
   };
 
-  const handleDelete = async () => {
-    try {
-      await api.delete(`/users/${id}`);
-      navigate('/superadmin/users');
-    } catch (err) {
-      alert('Failed to delete user');
-    }
-  };
+
 
   if (loading) return <div className="h-full flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-primary" /></div>;
   if (!user) return <div className="p-8 text-center text-text-secondary">User not found</div>;

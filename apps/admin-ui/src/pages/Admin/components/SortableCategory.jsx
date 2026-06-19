@@ -3,7 +3,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Edit2, Trash2 } from 'lucide-react';
 
-const SortableCategory = ({ category, isActive, onClick, onEdit, onDelete, onToggle }) => {
+const SortableCategory = ({ category, isActive, onClick, onEdit, onDelete }) => {
   const {
     attributes,
     listeners,

@@ -17,7 +17,6 @@ const LiveOrders = () => {
   const [activeTab, setActiveTab] = useState('Active');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [error, setError] = useState('');
   const socketRef = useRef(null);
   
   const tabs = ['Active', 'PENDING', 'CONFIRMED', 'PREPARING', 'READY', 'COMPLETED', 'CANCELLED'];
@@ -31,10 +30,8 @@ const LiveOrders = () => {
         params: { limit: 100 }
       });
       setOrders(response.data.data);
-      setError('');
     } catch (err) {
       console.error('Failed to fetch orders:', err);
-      setError('Failed to fetch orders');
     } finally {
       if (isInitial) setLoading(false);
     }
@@ -61,7 +58,7 @@ const LiveOrders = () => {
     });
 
     socket.on('connect_error', (err) => {
-      console.error('⚠️ [Socket] Connection Error:', err.message);
+      console.error('[Socket] Connection Error:', err.message);
       setIsConnected(false);
     });
 

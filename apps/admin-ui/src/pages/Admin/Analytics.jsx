@@ -27,7 +27,6 @@ const StatsCard = ({ title, value, icon: Icon, color, loading }) => (
 const AdminAnalytics = () => {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
-  const [error, setError] = useState(null);
   
   const today = new Date();
   const thirtyDaysAgo = new Date();
@@ -52,7 +51,6 @@ const AdminAnalytics = () => {
       }
     } catch (err) {
       console.error('Error fetching analytics:', err);
-      setError('Failed to load analytics data');
     } finally {
       setLoading(false);
     }
