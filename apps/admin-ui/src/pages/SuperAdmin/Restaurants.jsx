@@ -103,21 +103,6 @@ const Restaurants = () => {
     setError('');
   };
 
-  const toggleStatus = async (id, currentStatus) => {
-    if (currentStatus) {
-      // If deactivating, show modal
-      setModalConfig({ isOpen: true, storeId: id, currentStatus: true });
-    } else {
-      // If activating, do it directly
-      try {
-        await api.patch(`/stores/${id}/activate`);
-        fetchStores();
-      } catch (err) {
-        console.error(err);
-      }
-    }
-  };
-
   const confirmDeactivation = async () => {
     try {
       await api.patch(`/stores/${modalConfig.storeId}/deactivate`);
@@ -127,18 +112,6 @@ const Restaurants = () => {
     }
   };
 
-  const handleImpersonate = async (storeId) => {
-    try {
-      const response = await api.post('/auth/impersonate', { storeId });
-      if (response.data.success) {
-        setAccessToken(response.data.accessToken);
-        setUser(response.data.user);
-        navigate('/admin/dashboard');
-      }
-    } catch (err) {
-      console.error('Impersonation failed:', err);
-    }
-  };
 
   const filteredStores = stores.filter(store => 
     store.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
