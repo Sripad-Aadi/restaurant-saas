@@ -52,23 +52,21 @@ export const register = async (name, email, password, role, storeId) => {
 
 export const login = async (email, password) => {
   // +password because select: false on the schema
-  console.log('in login before db');
   const user = await User.findOne({ email }).select('+password');
   if (!user) throw { status: 401, message: 'Invalid email or password' };
 
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) throw { status: 401, message: 'Invalid email or password' };
-  console.log('in login after db');
-  
+
   const accessToken = generateAccessToken(user);
-  // const refreshToken = await generateRefreshToken(user._id);
+  const refreshToken = await generateRefreshToken(user._id);
 
   user.lastLogin = new Date();
   await user.save();
 
   return {
     accessToken,
-    refreshToken: 'test',
+    refreshToken,
     user: { id: user._id, name: user.name, email: user.email, role: user.role, storeId: user.storeId },
   };
 };
