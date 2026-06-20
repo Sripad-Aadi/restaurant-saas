@@ -58,7 +58,14 @@ router.post('/login', authLimiter, validate(loginSchema), async (req, res) => {
       req
     });
   } catch (err) {
-    res.status(err.status || 500).json({ success: false, message: err.message });
+    console.error(err);
+
+    res.status(err.status || 500).json({
+      success: false,
+      message: err.message,
+      stack: err.stack,
+      error: JSON.stringify(err, null, 2)
+    });
   }
 });
 
